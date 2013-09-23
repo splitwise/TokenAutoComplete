@@ -27,13 +27,13 @@ android {
                 srcDir 'src/main/java'
                 exclude 'com/tokenautocomplete/ContactsCompletionView.java',
                         'com/tokenautocomplete/Person.java',
-                        'com/tokenautocomplete/'
+                        'com/tokenautocomplete/TokenActivity.java'
             }
         }
     }
 }
 
 task jar(type: Jar) {
-    baseName "token-autocomplete"
+    baseName "tokenautocomplete"
     from android.sourceSets.jar.java
 }

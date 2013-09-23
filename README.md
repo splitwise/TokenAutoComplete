@@ -7,7 +7,7 @@ TokenAutoComplete is a Android Gmail style token  auto-complete text field and f
 Setup
 =====
 
-* Download the [jar file - TODO: add link] and add it to your project
+* Download the [jar file](https://github.com/splitwise/TokenAutoComplete/releases/download/v1.0/token-autocomplete.jar) and add it to your project
 
 Creating your auto complete view
 --------------------------------

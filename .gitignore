@@ -20,5 +20,5 @@ local.properties
 .project
 
 .gradle
-/.idea/workspace.xml
+.idea
 .DS_Store

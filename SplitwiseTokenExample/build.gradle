@@ -20,20 +20,13 @@ android {
         minSdkVersion 8
         targetSdkVersion 17
     }
-
-    sourceSets {
-        jar  {
-            java {
-                srcDir 'src/main/java'
-                exclude 'com/tokenautocomplete/ContactsCompletionView.java',
-                        'com/tokenautocomplete/Person.java',
-                        'com/tokenautocomplete/TokenActivity.java'
-            }
-        }
-    }
 }
 
 task jar(type: Jar) {
+    dependsOn assembleRelease
     baseName "tokenautocomplete"
-    from android.sourceSets.jar.java
+    from fileTree(dir: 'build/classes/release', includes: [
+        '**/TokenCompleteTextView*.class',
+        '**/FilteredArrayAdapter*.class'
+    ])
 }

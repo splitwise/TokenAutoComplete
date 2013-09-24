@@ -195,7 +195,13 @@ We can modify the TokenActivity to see how these callbacks work:
 
 ```java
 public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener {
-    /* code from the initial example */
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        /* code from the initial example */
+
+        completionView.setTokenListener(this);
+    }
 
     @Override
     public void onTokenAdded(Object token) {

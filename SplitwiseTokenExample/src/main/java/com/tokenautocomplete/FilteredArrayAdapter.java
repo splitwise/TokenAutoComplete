@@ -24,7 +24,7 @@ import java.util.List;
 
 abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
-    private ArrayList<T> originalObjects;
+    private List<T> originalObjects;
     private Filter filter;
 
     /**
@@ -100,7 +100,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      */
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, List<T> objects) {
         super(context, resource, textViewResourceId, new ArrayList<T>(objects));
-        this.originalObjects = new ArrayList<T>(objects);
+        this.originalObjects = objects;
     }
 
     @SuppressWarnings("unchecked")
@@ -144,11 +144,11 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
         private ArrayList<T> sourceObjects;
 
-        public AppFilter(ArrayList<T> objects) {
+        public AppFilter(List<T> objects) {
             setSourceObjects(objects);
         }
 
-        public void setSourceObjects(ArrayList<T> objects) {
+        public void setSourceObjects(List<T> objects) {
             synchronized (this) {
                 sourceObjects = new ArrayList<T>(objects);
             }

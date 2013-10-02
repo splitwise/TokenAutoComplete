@@ -18,10 +18,10 @@ If you'd rather just start with a working example, clone the project and take a 
 
 For a basic token auto complete view, you'll need to
 
-1. Subclass TokenMultiAutoCompleteView
+1. Subclass TokenCompleteTextView
 2. Create a layout and activity for your completion view
 
-### Subclass TokenMultiAutoCompleteView
+### Subclass TokenCompleteTextView
 
 You'll need to provide your own implementations for getViewForObject and defaultObject. You should return a view that displays the token from getViewForObject. In defaultObject, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
 

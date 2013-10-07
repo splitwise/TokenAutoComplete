@@ -3,6 +3,6 @@
 
     <string name="app_name">SplitwiseTokenExample</string>
     <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
+    <string name="email_prompt">enter a name or email address</string>
 
 </resources>

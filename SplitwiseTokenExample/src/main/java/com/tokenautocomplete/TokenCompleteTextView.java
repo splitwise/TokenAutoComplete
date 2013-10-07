@@ -1,9 +1,11 @@
 package com.tokenautocomplete;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
@@ -13,10 +15,13 @@ import android.text.SpanWatcher;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
+import android.text.style.CharacterStyle;
 import android.text.style.ImageSpan;
+import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.View;
@@ -51,6 +56,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     private ArrayList<Object> objects;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private String prefix = "";
+    private boolean hintVisible = false;
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -135,6 +141,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             text.insert(0, p);
         }
         prefix = p;
+
+        updateHint();
     }
 
     public List<Object> getObjects() {
@@ -205,6 +213,24 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
+    public void onFocusChanged(boolean hasFocus, int direction, Rect previous) {
+        super.onFocusChanged(hasFocus, direction, previous);
+        if (!hasFocus) {
+            setSingleLine(true);
+        } else {
+            setSingleLine(false);
+            Editable text = getText();
+            if (text != null) {
+                if (hintVisible) {
+                    setSelection(prefix.length());
+                } else {
+                    setSelection(text.length());
+                }
+            }
+        }
+    }
+
+    @Override
     protected CharSequence convertSelectionToString(Object object) {
         selectedObject = object;
 
@@ -270,6 +296,60 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         BitmapDrawable d = new BitmapDrawable(ctx.getResources(), b);
         d.setBounds(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
         return d;
+    }
+
+    private void updateHint() {
+        Editable text = getText();
+        if (text == null) {
+            return;
+        }
+
+        //Show hint if we need to
+        if (prefix.length() > 0) {
+            HintSpan[] hints = text.getSpans(0, text.length(), HintSpan.class);
+            HintSpan hint = null;
+            int testLength = prefix.length();
+            if (hints.length > 0) {
+                hint = hints[0];
+                testLength += text.getSpanEnd(hint) - text.getSpanStart(hint);
+            }
+
+            if (text.length() == testLength) {
+                if (hint != null) {
+                    return;//hint already visible
+                }
+
+                //We need to display the hint manually
+                Typeface tf = getTypeface();
+                int style = Typeface.NORMAL;
+                if (tf != null) {
+                    style = tf.getStyle();
+                }
+                ColorStateList colors = getHintTextColors();
+
+                HintSpan hintSpan = new HintSpan(null, style, (int)getTextSize(), colors, colors);
+                text.insert(prefix.length(), getHint());
+                text.setSpan(hintSpan, prefix.length(), prefix.length() + getHint().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                setSelection(prefix.length());
+
+                hintVisible = true;
+            } else {
+                //Remove the hint. There should only ever be one
+                int sStart = text.getSpanStart(hint);
+                int sEnd = text.getSpanEnd(hint);
+
+                text.removeSpan(hint);
+                text.replace(sStart, sEnd, "");
+
+                hintVisible = false;
+            }
+        }
+    }
+
+    public static class HintSpan extends TextAppearanceSpan {
+        public HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
+            super(family, style, size, color, linkColor);
+        }
     }
 
     public static class TokenImageSpan extends ImageSpan {
@@ -350,6 +430,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             Editable text = getText();
             if (text == null)
                 return;
+
+            updateHint();
 
             TokenImageSpan[] spans = text.getSpans(start, start + count, TokenImageSpan.class);
 

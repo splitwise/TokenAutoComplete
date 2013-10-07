@@ -255,12 +255,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
-        SpannableStringBuilder ssb = new SpannableStringBuilder("," + tokenizer.terminateToken(text));
+        addObject(selectedObject, text);
+    }
 
-        View tokenView = getViewForObject(selectedObject);
+    public void addObject(Object object, CharSequence sourceText) {
+        SpannableStringBuilder ssb = new SpannableStringBuilder("," + tokenizer.terminateToken(sourceText));
+        View tokenView = getViewForObject(object);
         Drawable d = convertViewToDrawable(tokenView);
-
-        TokenImageSpan tokenSpan = new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), selectedObject);
+        TokenImageSpan tokenSpan = new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), object);
 
         Editable editable = getText();
         int end = getSelectionEnd();

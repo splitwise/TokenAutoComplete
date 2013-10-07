@@ -3,10 +3,12 @@ package com.tokenautocomplete;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.SpanWatcher;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -48,6 +50,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     private TokenSpanWatcher spanWatcher;
     private ArrayList<Object> objects;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
+    private String prefix = "";
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -67,6 +70,18 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         } else {
             addTextChangedListener(new TokenTextWatcher());
         }
+
+        setFilters(new InputFilter[] {new InputFilter() {
+
+            @Override
+            public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                //We need to not do anything when we would delete the prefix
+                if (dstart < prefix.length() && dend == prefix.length()) {
+                    return prefix.substring(dstart, dend);
+                }
+                return null;
+            }
+        }});
 
         //We had _Parent style during initialization to handle an edge case in the parent
         //now we can switch to Clear, usually the best choice
@@ -89,6 +104,16 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
+    protected void performFiltering(CharSequence text, int start, int end,
+                                    int keyCode) {
+        if (start < prefix.length()) {
+            start = prefix.length();
+        }
+        getFilter().filter(text.subSequence(start, end), this);
+    }
+
+
+    @Override
     public void setTokenizer(Tokenizer t) {
         super.setTokenizer(t);
         tokenizer = t;
@@ -100,6 +125,16 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
     public void setTokenListener(TokenListener l) {
         listener = l;
+    }
+
+    public void setPrefix(String p) {
+        //Have to clear and set the actual text before saving the prefix to avoid the prefix filter
+        prefix = "";
+        Editable text = getText();
+        if (text != null) {
+            text.insert(0, p);
+        }
+        prefix = p;
     }
 
     public List<Object> getObjects() {
@@ -128,6 +163,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         Editable editable = getText();
         int end = getSelectionEnd();
         int start = tokenizer.findTokenStart(editable, end);
+        if (start < prefix.length()) {
+            start = prefix.length();
+        }
         return TextUtils.substring(editable, start, end);
     }
 
@@ -149,6 +187,21 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
 
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onSelectionChanged(int selStart, int selEnd) {
+        if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
+            //Don't let users select the prefix
+            selStart = prefix.length();
+
+            if (selEnd < prefix.length()) {
+                selEnd = prefix.length();
+            }
+            setSelection(selStart, selEnd);
+        } else {
+            super.onSelectionChanged(selStart, selEnd);
+        }
     }
 
     @Override
@@ -186,6 +239,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         Editable editable = getText();
         int end = getSelectionEnd();
         int start = tokenizer.findTokenStart(editable, end);
+        if (start < prefix.length()) {
+            start = prefix.length();
+        }
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {

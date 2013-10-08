@@ -334,6 +334,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
      *             tokenView.addObject(myObject, " ");
      *         }
      *     });
+     *
+     * Also, if you call setPrefix(), you'll need to do it *after* that initial
+     * replaceTextWith() call. Otherwise, the hint text will appear behind that
+     * initial object.
      */
     public void replaceTextWith(Object object, CharSequence sourceText) {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing

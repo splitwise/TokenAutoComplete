@@ -216,6 +216,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
     @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
+        if (hintVisible) {
+            //Don't let users select the hint
+            selStart = selEnd = 0;
+        }
+
         if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
             //Don't let users select the prefix
             selStart = prefix.length();

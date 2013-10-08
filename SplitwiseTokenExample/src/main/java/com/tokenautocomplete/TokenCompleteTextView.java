@@ -11,22 +11,23 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.Layout;
 import android.text.SpanWatcher;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
-import android.text.style.CharacterStyle;
 import android.text.style.ImageSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +58,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private String prefix = "";
     private boolean hintVisible = false;
+    private Layout lastLayout = null;
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -177,6 +179,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         return TextUtils.substring(editable, start, end);
     }
 
+    private float maxTextWidth() {
+        return getWidth() - getPaddingLeft() - getPaddingRight();
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_COMMA) {
@@ -213,18 +219,68 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        lastLayout = getLayout(); //Used for checking text positions
+    }
+
+    @Override
     public void onFocusChanged(boolean hasFocus, int direction, Rect previous) {
         super.onFocusChanged(hasFocus, direction, previous);
         if (!hasFocus) {
             setSingleLine(true);
+
+            Editable text = getText();
+            if (text != null && lastLayout != null) {
+                //Display +x thingy if appropriate
+                int lastPosition = lastLayout.getLineVisibleEnd(0);
+                TokenImageSpan[] tokens = text.getSpans(0, lastPosition, TokenImageSpan.class);
+                int count = objects.size() - tokens.length;
+                if (count > 0) {
+                    lastPosition++;
+                    CountSpan cs = new CountSpan(count, TokenCompleteTextView.this);
+                    text.insert(lastPosition, cs.text);
+
+                    float newWidth = Layout.getDesiredWidth(text, 0,
+                            lastPosition + cs.text.length(), lastLayout.getPaint());
+                    //If the +x span will be moved off screen, move it one token in
+                    if (newWidth > maxTextWidth()) {
+                        text.delete(lastPosition, lastPosition + cs.text.length());
+
+                        if (tokens.length > 0) {
+                            TokenImageSpan token = tokens[tokens.length - 1];
+                            lastPosition = text.getSpanStart(token);
+                        }
+
+                        text.insert(lastPosition, cs.text);
+                        cs = new CountSpan(count + 1, TokenCompleteTextView.this);
+                    }
+
+                    text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+
+
         } else {
             setSingleLine(false);
             Editable text = getText();
             if (text != null) {
+                CountSpan[] counts = text.getSpans(0, text.length(), CountSpan.class);
+                for (CountSpan count: counts) {
+                    text.delete(text.getSpanStart(count), text.getSpanEnd(count));
+                    text.removeSpan(count);
+                }
+
                 if (hintVisible) {
                     setSelection(prefix.length());
                 } else {
                     setSelection(text.length());
+                }
+
+                TokenSpanWatcher[] watchers = getText().getSpans(0, getText().length(), TokenSpanWatcher.class);
+                if (watchers.length == 0) {
+                    //Someone removes watchers? I'm pretty sure this isn't in this code... -mgod
+                    text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }
         }
@@ -282,7 +338,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     protected Drawable convertViewToDrawable(View view) {
         //TODO: I'm not really sure how to test that this gets a correctly sized image
         //Can anyone with more experience testing the drawing pipeline take a look?
-        int widthSpec = MeasureSpec.makeMeasureSpec(getWidth(), MeasureSpec.AT_MOST);
+        int widthSpec = MeasureSpec.makeMeasureSpec((int)maxTextWidth(), MeasureSpec.AT_MOST);
         int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
 
         view.measure(widthSpec, heightSpec);
@@ -334,6 +390,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
                 hintVisible = true;
             } else {
+                if (hint == null) {
+                    return; //hint already removed
+                }
+
                 //Remove the hint. There should only ever be one
                 int sStart = text.getSpanStart(hint);
                 int sEnd = text.getSpanEnd(hint);
@@ -349,6 +409,25 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     public static class HintSpan extends TextAppearanceSpan {
         public HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
             super(family, style, size, color, linkColor);
+        }
+    }
+
+    public static class CountSpan extends ImageSpan {
+        public String text = "";
+
+        private static Drawable getDrawableForCount(int count, TokenCompleteTextView parent) {
+            TextView countView = new TextView(parent.getContext());
+            countView.setTextColor(parent.getCurrentTextColor());
+            countView.setTextSize(TypedValue.COMPLEX_UNIT_PX, parent.getTextSize());
+            countView.setText("+" + count);
+            //Make the view as wide as the parent to push the tokens off screen
+            countView.setMinimumWidth((int)parent.maxTextWidth());
+            return parent.convertViewToDrawable(countView);
+        }
+
+        public CountSpan(int count, TokenCompleteTextView parent) {
+            super(getDrawableForCount(count, parent));
+            text = "+" + count;
         }
     }
 
@@ -482,9 +561,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                 return;
 
             TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-            for (TokenImageSpan token: spans) {
-                currentTokens.add(token);
-            }
+            currentTokens.addAll(Arrays.asList(spans));
         }
 
         @Override

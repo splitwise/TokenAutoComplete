@@ -9,7 +9,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/email_prompt"
-        android:textColor="@android:color/darker_gray" />
+        android:textColor="@android:color/darker_gray"
+        android:textSize="19sp" />
 
     <TextView
         android:layout_width="match_parent"
@@ -20,20 +21,20 @@
         android:layout_alignLeft="@+id/searchView"
         android:layout_marginTop="20dp" />
 
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/editText"
+        android:layout_below="@+id/lastEvent"
+        android:text="test focus loss" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:id="@+id/tokens"
-        android:layout_below="@+id/lastEvent"
+        android:layout_below="@+id/editText"
         android:layout_alignLeft="@+id/lastEvent"
         android:layout_marginTop="10dp" />
-
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/editText"
-        android:layout_below="@+id/tokens"
-        android:text="test focus loss" />
 
 </RelativeLayout>

@@ -308,15 +308,29 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     @Override
     protected void replaceText(CharSequence text) {
         clearComposingText();
+        replaceTextWith(selectedObject, text);
+    }
 
+    /**
+     * Replaces the token before the cursor with the given object.
+     *
+     * If you use this in onCreate, or otherwise before the activity has been
+     * fully laid out, you'll need to post it to the message queue to be run
+     * later, e.g.:
+     *
+     * tokenView.post(new Runnable() {
+     *         @Override public void run() {
+     *             tokenView.addObject(myObject, " ");
+     *         }
+     *     });
+     */
+    public void replaceTextWith(Object object, CharSequence sourceText) {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
-        SpannableStringBuilder ssb = new SpannableStringBuilder("," + tokenizer.terminateToken(text));
-
-        View tokenView = getViewForObject(selectedObject);
+        SpannableStringBuilder ssb = new SpannableStringBuilder("," + tokenizer.terminateToken(sourceText));
+        View tokenView = getViewForObject(object);
         Drawable d = convertViewToDrawable(tokenView);
-
-        TokenImageSpan tokenSpan = new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), selectedObject);
+        TokenImageSpan tokenSpan = new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), object);
 
         Editable editable = getText();
         int end = getSelectionEnd();

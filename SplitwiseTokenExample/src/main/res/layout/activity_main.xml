@@ -28,12 +28,20 @@
         android:layout_below="@+id/lastEvent"
         android:text="test focus loss" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Remove last token"
+        android:id="@+id/removeButton"
+        android:layout_below="@+id/editText"
+        android:layout_centerHorizontal="true" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:id="@+id/tokens"
-        android:layout_below="@+id/editText"
+        android:layout_below="@+id/removeButton"
         android:layout_alignLeft="@+id/lastEvent"
         android:layout_marginTop="10dp" />
 

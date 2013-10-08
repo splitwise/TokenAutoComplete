@@ -6,7 +6,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener {
     ContactsCompletionView completionView;
@@ -54,6 +58,19 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         completionView.setPrefix("To: ");
         completionView.setAdapter(adapter);
         completionView.setTokenListener(this);
+        completionView.addObject(people[0]);
+        completionView.addObject(people[1]);
+
+        Button removeButton = (Button)findViewById(R.id.removeButton);
+        removeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                List<Object> objects = completionView.getObjects();
+                if (objects.size() > 0) {
+                    completionView.removeObject(objects.get(objects.size() - 1));
+                }
+            }
+        });
     }
 
     private void updateTokenConfirmation() {

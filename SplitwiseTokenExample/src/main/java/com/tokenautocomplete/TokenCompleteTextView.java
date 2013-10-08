@@ -316,36 +316,23 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
     }
 
+    private SpannableStringBuilder buildSpannableForText(CharSequence text) {
+        //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
+        //This is a hack to work around the fact that the tokenizer cannot directly detect spans
+        return new SpannableStringBuilder("," + tokenizer.terminateToken(text));
+    }
+
+    private TokenImageSpan buildSpanForObject(Object obj, SpannableStringBuilder ssb) {
+        View tokenView = getViewForObject(obj);
+        Drawable d = convertViewToDrawable(tokenView);
+        return new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), obj);
+    }
+
     @Override
     protected void replaceText(CharSequence text) {
         clearComposingText();
-        replaceTextWith(selectedObject, text);
-    }
-
-    /**
-     * Replaces the token before the cursor with the given object.
-     *
-     * If you use this in onCreate, or otherwise before the activity has been
-     * fully laid out, you'll need to post it to the message queue to be run
-     * later, e.g.:
-     *
-     * tokenView.post(new Runnable() {
-     *         @Override public void run() {
-     *             tokenView.addObject(myObject, " ");
-     *         }
-     *     });
-     *
-     * Also, if you call setPrefix(), you'll need to do it *after* that initial
-     * replaceTextWith() call. Otherwise, the hint text will appear behind that
-     * initial object.
-     */
-    public void replaceTextWith(Object object, CharSequence sourceText) {
-        //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
-        //This is a hack to work around the fact that the tokenizer cannot directly detect spans
-        SpannableStringBuilder ssb = new SpannableStringBuilder("," + tokenizer.terminateToken(sourceText));
-        View tokenView = getViewForObject(object);
-        Drawable d = convertViewToDrawable(tokenView);
-        TokenImageSpan tokenSpan = new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), object);
+        SpannableStringBuilder ssb = buildSpannableForText(text);
+        TokenImageSpan tokenSpan = buildSpanForObject(selectedObject, ssb);
 
         Editable editable = getText();
         int end = getSelectionEnd();
@@ -356,7 +343,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {
-            if (allowDuplicates == false && objects.contains(object)) {
+            if (allowDuplicates == false && objects.contains(selectedObject)) {
                 editable.replace(start, end, " ");
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);
@@ -367,6 +354,72 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
 
+    /**
+     * Append a token object to the object list
+     *
+     * @param object the object to add to the displayed tokens
+     * @param sourceText the text used if this object is deleted
+     */
+    public void addObject(final Object object, final CharSequence sourceText) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                if (allowDuplicates == false && objects.contains(object)) return;
+
+                SpannableStringBuilder ssb = buildSpannableForText(sourceText);
+                TokenImageSpan tokenSpan = buildSpanForObject(object, ssb);
+
+                Editable editable = getText();
+                if (editable != null) {
+                    int offset = editable.length();
+                    //There might be a hint visible...
+                    if (hintVisible) {
+                        //...so we need to put the object in in front of the hint
+                        offset = prefix.length();
+                        editable.insert(offset, ssb);
+                    } else {
+                        editable.append(ssb);
+                    }
+                    editable.setSpan(tokenSpan, offset, offset + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+            }
+        });
+    }
+
+    /**
+     * Shorthand for addObject(object, "")
+     *
+     * @param object the object to add to the displayed token
+     */
+    public void addObject(Object object) {
+        addObject(object, "");
+    }
+
+    /**
+     * Remove an object from the token list. Will remove duplicates or do nothing if no object
+     * present in the view.
+     *
+     * @param object object to remove, may be null or not in the view
+     */
+    public void removeObject(final Object object) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                //To make sure all the appropriate callbacks happen, we just want to piggyback on the
+                //existing code that handles deleting spans when the text changes
+                Editable text = getText();
+                if (text == null) return;
+
+                TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+                for (TokenImageSpan span: spans) {
+                    if (span.getToken().equals(object)) {
+                        //Add 1 to the end because we put a " " at the end of the spans when adding them
+                        text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
+                    }
+                }
+            }
+        });
+    }
 
     protected Drawable convertViewToDrawable(View view) {
         //TODO: I'm not really sure how to test that this gets a correctly sized image

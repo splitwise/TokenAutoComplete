@@ -57,6 +57,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private String prefix = "";
     private boolean hintVisible = false;
+    private boolean allowDuplicates = true;
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -147,6 +148,16 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
     public List<Object> getObjects() {
         return objects;
+    }
+
+    /**
+     * Sets whether to allow duplicate objects. If false, when the user selects
+     * an object that's already in the view, the current text is just cleared.
+     *
+     * Defaults to true. Requires that the objects implement equals() correctly.
+     */
+    public void allowDuplicates(boolean allow) {
+        allowDuplicates = allow;
     }
 
     /**
@@ -285,9 +296,13 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {
-            QwertyKeyListener.markAsReplaced(editable, start, end, original);
-            editable.replace(start, end, ssb);
-            editable.setSpan(tokenSpan, start, start + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (allowDuplicates == false && objects.contains(object)) {
+                editable.replace(start, end, " ");
+            } else {
+                QwertyKeyListener.markAsReplaced(editable, start, end, original);
+                editable.replace(start, end, ssb);
+                editable.setSpan(tokenSpan, start, start + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
         }
     }
 

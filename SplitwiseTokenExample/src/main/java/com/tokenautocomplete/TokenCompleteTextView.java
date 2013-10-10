@@ -209,7 +209,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     public void invalidate() {
         //Need to force the TextView private mEditor to reset as well
         setEnabled(!isEnabled());
-        setEnabled(!isEnabled());
         super.invalidate();
     }
 

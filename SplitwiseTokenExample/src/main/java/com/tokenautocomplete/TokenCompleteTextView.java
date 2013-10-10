@@ -237,6 +237,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         Editable text = getText();
+        boolean handled = false;
+
+        if (tokenClickStyle == TokenClickStyle.None) {
+            handled = super.onTouchEvent(event);
+        }
 
         if (isFocused() && text != null && lastLayout != null && action == MotionEvent.ACTION_UP) {
 
@@ -252,12 +257,15 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
                 if (links.length > 0) {
                     links[0].onClick();
-                    return true;
+                    handled = true;
                 }
             }
         }
 
-        return super.onTouchEvent(event);
+        if (!handled && tokenClickStyle != TokenClickStyle.None) {
+            handled = super.onTouchEvent(event);
+        }
+        return handled;
 
     }
 

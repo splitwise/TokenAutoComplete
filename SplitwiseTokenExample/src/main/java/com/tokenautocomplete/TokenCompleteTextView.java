@@ -2,12 +2,10 @@ package com.tokenautocomplete;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -19,11 +17,12 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
-import android.text.style.ImageSpan;
+import android.text.style.ReplacementSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -50,12 +49,20 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         ToString //...replace the token with toString of the token object
     }
 
+    //When the user clicks on a token...
+    public enum TokenClickStyle {
+        None, //...do nothing, but make sure the cursor is not in the token
+        Delete,//...delete the token
+        Select//...select the token. A second click will delete it.
+    }
+
     private Tokenizer tokenizer;
     private Object selectedObject;
     private TokenListener listener;
     private TokenSpanWatcher spanWatcher;
     private ArrayList<Object> objects;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
+    private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private String prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
@@ -132,6 +139,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         deletionStyle = dStyle;
     }
 
+    public void setTokenClickStyle(TokenClickStyle cStyle) {
+        tokenClickStyle = cStyle;
+    }
+
     public void setTokenListener(TokenListener l) {
         listener = l;
     }
@@ -195,6 +206,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
+    public void invalidate() {
+        //Need to force the TextView private mEditor to reset as well
+        setEnabled(!isEnabled());
+        setEnabled(!isEnabled());
+        super.invalidate();
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_COMMA) {
             if (getListSelection() == ListView.INVALID_POSITION) {
@@ -215,11 +234,49 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        int action = event.getActionMasked();
+        Editable text = getText();
+
+        if (isFocused() && text != null && lastLayout != null && action == MotionEvent.ACTION_UP) {
+
+            int offset = -1;
+            if (Build.VERSION.SDK_INT < 14) {
+                offset = TextPositionCompatibilityAPI8.getOffsetForPosition(event.getX(), event.getY(), this, lastLayout);
+            } else {
+                offset = getOffsetForPosition(event.getX(), event.getY());
+            }
+
+            if (offset != -1) {
+                TokenImageSpan[] links = text.getSpans(offset, offset, TokenImageSpan.class);
+
+                if (links.length > 0) {
+                    links[0].onClick();
+                    return true;
+                }
+            }
+        }
+
+        return super.onTouchEvent(event);
+
+    }
+
+    @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
         if (hintVisible) {
             //Don't let users select the hint
-            selStart = selEnd = 0;
+            selStart = 0;
         }
+        //Never let users select text
+        selEnd = selStart;
+
+        if (tokenClickStyle == TokenClickStyle.Select) {
+            Editable text = getText();
+            if (text != null) {
+                clearSelections();
+            }
+        }
+
 
         if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
             //Don't let users select the prefix
@@ -266,10 +323,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                         if (tokens.length > 0) {
                             TokenImageSpan token = tokens[tokens.length - 1];
                             lastPosition = text.getSpanStart(token);
+                            cs.setCount(count + 1);
+                        } else {
+                            lastPosition = prefix.length();
                         }
 
                         text.insert(lastPosition, cs.text);
-                        cs = new CountSpan(count + 1, TokenCompleteTextView.this);
                     }
 
                     text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -329,8 +388,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
     private TokenImageSpan buildSpanForObject(Object obj, SpannableStringBuilder ssb) {
         View tokenView = getViewForObject(obj);
-        Drawable d = convertViewToDrawable(tokenView);
-        return new TokenImageSpan(d, ssb.toString().substring(0, ssb.length() - 1), obj);
+        return new TokenImageSpan(tokenView, obj);
     }
 
     @Override
@@ -348,7 +406,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {
-            if (allowDuplicates == false && objects.contains(selectedObject)) {
+            if (!allowDuplicates && objects.contains(selectedObject)) {
                 editable.replace(start, end, " ");
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);
@@ -369,7 +427,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         post(new Runnable() {
             @Override
             public void run() {
-                if (allowDuplicates == false && objects.contains(object)) return;
+                if (!allowDuplicates && objects.contains(object)) return;
 
                 SpannableStringBuilder ssb = buildSpannableForText(sourceText);
                 TokenImageSpan tokenSpan = buildSpanForObject(object, ssb);
@@ -426,25 +484,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         });
     }
 
-    protected Drawable convertViewToDrawable(View view) {
-        //TODO: I'm not really sure how to test that this gets a correctly sized image
-        //Can anyone with more experience testing the drawing pipeline take a look?
-        int widthSpec = MeasureSpec.makeMeasureSpec((int)maxTextWidth(), MeasureSpec.AT_MOST);
-        int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
-
-        view.measure(widthSpec, heightSpec);
-        view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-
-        Bitmap b = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
-        view.draw(c);
-        Context ctx = getContext();
-        assert null != ctx;
-        BitmapDrawable d = new BitmapDrawable(ctx.getResources(), b);
-        d.setBounds(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
-        return d;
-    }
-
     private void updateHint() {
         Editable text = getText();
         if (text == null) {
@@ -497,42 +536,119 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
     }
 
+    private void clearSelections() {
+        if (tokenClickStyle != TokenClickStyle.Select) return;
+
+        Editable text = getText();
+        if (text == null) return;
+
+        TokenImageSpan[] tokens = text.getSpans(0, text.length(), TokenImageSpan.class);
+        for (TokenImageSpan token: tokens) {
+            token.view.setSelected(false);
+        }
+        invalidate();
+    }
+
     public static class HintSpan extends TextAppearanceSpan {
         public HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
             super(family, style, size, color, linkColor);
         }
     }
 
-    public static class CountSpan extends ImageSpan {
-        public String text = "";
+    private class ViewSpan extends ReplacementSpan {
+        protected View view;
 
-        private static Drawable getDrawableForCount(int count, TokenCompleteTextView parent) {
-            TextView countView = new TextView(parent.getContext());
-            countView.setTextColor(parent.getCurrentTextColor());
-            countView.setTextSize(TypedValue.COMPLEX_UNIT_PX, parent.getTextSize());
-            countView.setText("+" + count);
-            //Make the view as wide as the parent to push the tokens off screen
-            countView.setMinimumWidth((int)parent.maxTextWidth());
-            return parent.convertViewToDrawable(countView);
+        public ViewSpan(View v) {
+            view = v;
         }
 
-        public CountSpan(int count, TokenCompleteTextView parent) {
-            super(getDrawableForCount(count, parent));
-            text = "+" + count;
+        private void prepView() {
+            int widthSpec = MeasureSpec.makeMeasureSpec((int)maxTextWidth(), MeasureSpec.AT_MOST);
+            int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+
+            view.measure(widthSpec, heightSpec);
+            view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        }
+
+        public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
+            prepView();
+
+            canvas.save();
+            canvas.translate(x, bottom - view.getBottom());
+            view.draw(canvas);
+            canvas.restore();
+        }
+
+        public int getSize(Paint paint, CharSequence charSequence, int i, int i2, Paint.FontMetricsInt fm) {
+            prepView();
+            if (fm != null) {
+                fm.ascent = view.getBottom();
+                fm.descent = 0;
+
+                fm.top = fm.ascent;
+                fm.bottom = 0;
+            }
+
+            return view.getRight();
         }
     }
 
-    public static class TokenImageSpan extends ImageSpan {
+    private class CountSpan extends ViewSpan {
+        public String text = "";
+
+        public CountSpan(int count, TokenCompleteTextView parent) {
+            super(new TextView(parent.getContext()));
+            TextView v = (TextView)view;
+            v.setTextColor(parent.getCurrentTextColor());
+            v.setTextSize(TypedValue.COMPLEX_UNIT_PX, parent.getTextSize());
+            //Make the view as wide as the parent to push the tokens off screen
+            v.setMinimumWidth((int) parent.maxTextWidth());
+            setCount(count);
+        }
+
+        public void setCount(int count) {
+            text = "+" + count;
+            ((TextView)view).setText(text);
+        }
+    }
+
+    private class TokenImageSpan extends ViewSpan {
         private Object token;
 
-        public TokenImageSpan(Drawable d, String source, Object token) {
-            super(d, source);
+        public TokenImageSpan(View d, Object token) {
+            super(d);
             this.token = token;
         }
 
         public Object getToken() {
             return this.token;
         }
+
+        public void onClick() {
+            Editable text = getText();
+            if (text == null) return;
+
+            switch (tokenClickStyle) {
+                case Select:
+                    if (!view.isSelected()) {
+                        clearSelections();
+                        view.setSelected(true);
+                        break;
+                    }
+                    //If the view is already selected, we want to delete it
+                case Delete:
+                    //Add 1 to the end because we put a " " at the end of the spans when adding them
+                    text.delete(text.getSpanStart(this), text.getSpanEnd(this) + 1);
+                    break;
+                case None:
+                default:
+                    if (getSelectionStart() != text.getSpanEnd(this) + 1) {
+                        //Make sure the selection is not in the middle of the span
+                        setSelection(text.getSpanEnd(this) + 1);
+                    }
+            }
+        }
+
     }
 
     public static interface TokenListener {
@@ -562,22 +678,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
 
         @Override
-        public void onSpanChanged(Spannable text, Object what, int ostart, int oend, int nstart, int nend) {
-            if (what != null && what instanceof TokenImageSpan) {
-                //Make sure we're not at the beginning of the span, as we only want to remove the span if we're deleting into it
-                //If the end is not changing, this means we're deleting into the right side of the span
-                if (oend == nend) {
-                    int spanStart = text.getSpanStart(what);
-                    //remove the span first to prevent recursion
-                    text.removeSpan(what);
-                    //Remove the first character in the span (our sentinel , from replaceText)
-                    Editable content = getText();
-                    if (content != null) {
-                        content.delete(spanStart, spanStart + 1);
-                    }
-                }
-            }
-        }
+        public void onSpanChanged(Spannable text, Object what, int ostart, int oend, int nstart, int nend) {}
     }
 
     /**
@@ -585,6 +686,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
      * without this, you get the auto-complete dropdown a character early
      */
     private class TokenTextWatcher implements TextWatcher {
+
         protected void removeToken(TokenImageSpan token, Editable text) {
             text.removeSpan(token);
         }
@@ -601,9 +703,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             if (text == null)
                 return;
 
+            clearSelections();
             updateHint();
 
-            TokenImageSpan[] spans = text.getSpans(start, start + count, TokenImageSpan.class);
+            TokenImageSpan[] spans = text.getSpans(start - before, start - before + count, TokenImageSpan.class);
 
             for (TokenImageSpan token: spans) {
 
@@ -663,6 +766,38 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                     spanWatcher.onSpanRemoved(s, token, s.getSpanStart(token), s.getSpanEnd(token));
                 }
             }
+        }
+    }
+
+    private static class TextPositionCompatibilityAPI8 {
+        //Borrowing some code from API 14
+        static public int getOffsetForPosition(float x, float y, TextView tv, Layout layout) {
+            if (layout == null) return -1;
+            final int line = getLineAtCoordinate(y, tv, layout);
+            return getOffsetAtCoordinate(line, x, tv, layout);
+        }
+
+        static private float convertToLocalHorizontalCoordinate(float x, TextView tv) {
+            x -= tv.getTotalPaddingLeft();
+            // Clamp the position to inside of the view.
+            x = Math.max(0.0f, x);
+            x = Math.min(tv.getWidth() - tv.getTotalPaddingRight() - 1, x);
+            x += tv.getScrollX();
+            return x;
+        }
+
+        static private int getLineAtCoordinate(float y, TextView tv, Layout layout) {
+            y -= tv.getTotalPaddingTop();
+            // Clamp the position to inside of the view.
+            y = Math.max(0.0f, y);
+            y = Math.min(tv.getHeight() - tv.getTotalPaddingBottom() - 1, y);
+            y += tv.getScrollY();
+            return layout.getLineForVertical((int) y);
+        }
+
+        static private int getOffsetAtCoordinate(int line, float x, TextView tv, Layout layout) {
+            x = convertToLocalHorizontalCoordinate(x, tv);
+            return layout.getOffsetForHorizontal(line, x);
         }
     }
 }

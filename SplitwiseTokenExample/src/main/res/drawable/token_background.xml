@@ -1,15 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<shape xmlns:android="http://schemas.android.com/apk/res/android" >
-    <stroke
-        android:width="1dp"
-        android:color="#ffd4d4d4" />
-    <solid android:color="#ffafafaf" />
 
-    <corners
-        android:topLeftRadius="3dp"
-        android:bottomLeftRadius="3dp"
-        android:topRightRadius="3dp"
-        android:bottomRightRadius="3dp"/>
-
-</shape>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/token_default" android:state_selected="false" />
+    <item android:drawable="@drawable/token_selected" android:state_selected="true" />
+</selector>

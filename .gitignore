@@ -19,6 +19,16 @@ local.properties
 .classpath
 .project
 
-.gradle
+# IntelliJ generated files/folders
 .idea
+*.iml
+*.ipr
+*.iws
+out
+
+# Mac OS X internal files
 .DS_Store
+
+# Gradle
+.gradle
+build/

@@ -529,7 +529,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
     private void updateHint() {
         Editable text = getText();
-        if (text == null) {
+        CharSequence hintText = getHint();
+        if (text == null || hintText == null) {
             return;
         }
 
@@ -557,7 +558,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                 ColorStateList colors = getHintTextColors();
 
                 HintSpan hintSpan = new HintSpan(null, style, (int)getTextSize(), colors, colors);
-                text.insert(prefix.length(), getHint());
+                text.insert(prefix.length(), hintText);
                 text.setSpan(hintSpan, prefix.length(), prefix.length() + getHint().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 setSelection(prefix.length());
 

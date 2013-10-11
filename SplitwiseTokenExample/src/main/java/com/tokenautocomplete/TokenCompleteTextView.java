@@ -82,7 +82,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         //I haven't tested on other 3.x series SDKs
         if (Build.VERSION.SDK_INT < 14) {
             addTextChangedListener(new TokenTextWatcherAPI8());
-
+            setLongClickable(false);
         } else {
             addTextChangedListener(new TokenTextWatcher());
         }
@@ -205,14 +205,33 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
+    boolean inInvalidate = false;
     @Override
     public void invalidate() {
         //Need to force the TextView private mEditor to reset as well on 4.x
-        if (Build.VERSION.SDK_INT >= 14) {
-            setEnabled(!isEnabled());
-            setEnabled(!isEnabled());
+        if (Build.VERSION.SDK_INT >= 14 && !inInvalidate) {
+            inInvalidate = true;
+            setShadowLayer(getShadowRadius(), getShadowDx(), getShadowDy(), getShadowColor());
+            inInvalidate = false;
         }
         super.invalidate();
+    }
+
+    @Override
+    public boolean enoughToFilter() {
+        Editable text = getText();
+
+        int end = getSelectionEnd();
+        if (end < 0 || tokenizer == null) {
+            return false;
+        }
+
+        int start = tokenizer.findTokenStart(text, end);
+        if (start < prefix.length()) {
+            start = prefix.length();
+        }
+
+        return end - start >= getThreshold();
     }
 
     @Override
@@ -486,12 +505,26 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                 TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
                 for (TokenImageSpan span: spans) {
                     if (span.getToken().equals(object)) {
-                        //Add 1 to the end because we put a " " at the end of the spans when adding them
-                        text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
+                        removeSpan(span);
                     }
                 }
             }
         });
+    }
+
+    private void removeSpan(TokenImageSpan span) {
+        Editable text = getText();
+        if (text == null) return;
+
+        if (Build.VERSION.SDK_INT < 14) {
+            //HACK: Need to manually trigger on Span removed if there is only 1 object
+            //not sure if there's a cleaner way
+            if (objects.size() == 1) {
+                spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
+            }
+        }
+        //Add 1 to the end because we put a " " at the end of the spans when adding them
+        text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
     }
 
     private void updateHint() {
@@ -647,8 +680,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
                     }
                     //If the view is already selected, we want to delete it
                 case Delete:
-                    //Add 1 to the end because we put a " " at the end of the spans when adding them
-                    text.delete(text.getSpanStart(this), text.getSpanEnd(this) + 1);
+                    removeSpan(this);
                     break;
                 case None:
                 default:

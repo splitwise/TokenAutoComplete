@@ -67,6 +67,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     private boolean hintVisible = false;
     private Layout lastLayout = null;
     private boolean allowDuplicates = true;
+    private boolean initialized = false;
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -106,6 +107,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         //We had _Parent style during initialization to handle an edge case in the parent
         //now we can switch to Clear, usually the best choice
         setDeletionStyle(TokenDeleteStyle.Clear);
+        initialized = true;
     }
 
     public TokenCompleteTextView(Context context) {
@@ -213,7 +215,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     @Override
     public void invalidate() {
         //Need to force the TextView private mEditor to reset as well on 4.x
-        if (Build.VERSION.SDK_INT >= 14 && !inInvalidate) {
+        if (Build.VERSION.SDK_INT >= 14 && initialized && !inInvalidate) {
             inInvalidate = true;
             setShadowLayer(getShadowRadius(), getShadowDx(), getShadowDy(), getShadowColor());
             inInvalidate = false;

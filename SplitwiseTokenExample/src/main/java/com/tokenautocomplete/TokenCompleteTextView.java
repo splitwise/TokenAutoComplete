@@ -82,10 +82,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         //I haven't tested on other 3.x series SDKs
         if (Build.VERSION.SDK_INT < 14) {
             addTextChangedListener(new TokenTextWatcherAPI8());
-            setLongClickable(false);
         } else {
             addTextChangedListener(new TokenTextWatcher());
         }
+
+        if (Build.VERSION.SDK_INT >= 11) {
+            setTextIsSelectable(false);
+        }
+        setLongClickable(false);
 
         setFilters(new InputFilter[] {new InputFilter() {
 
@@ -309,12 +313,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
         if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
             //Don't let users select the prefix
-            selStart = prefix.length();
-
-            if (selEnd < prefix.length()) {
-                selEnd = prefix.length();
-            }
-            setSelection(selStart, selEnd);
+            setSelection(prefix.length(), prefix.length());
         } else {
             super.onSelectionChanged(selStart, selEnd);
         }
@@ -625,12 +624,19 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
         public int getSize(Paint paint, CharSequence charSequence, int i, int i2, Paint.FontMetricsInt fm) {
             prepView();
-            if (fm != null) {
-                fm.ascent = view.getBottom();
-                fm.descent = 0;
 
-                fm.top = fm.ascent;
-                fm.bottom = 0;
+            if (fm != null) {
+                //We need to make sure the layout allots enough space for the view
+                int height = view.getMeasuredHeight();
+                int need = height - (fm.descent - fm.ascent);
+                if (need > 0) {
+                    int ascent = need / 2;
+                    //This makes sure the text drawing area will be tall enough for the view
+                    fm.descent += need - ascent;
+                    fm.ascent -= ascent;
+                    fm.bottom += need - ascent;
+                    fm.top -= need / 2;
+                }
             }
 
             return view.getRight();

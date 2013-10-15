@@ -1,12 +1,14 @@
 package com.tokenautocomplete;
 
+import java.io.Serializable;
+
 /**
  * Simple container object for contact data
  *
  * Created by mgod on 9/12/13.
  * @author mgod
  */
-public class Person {
+public class Person implements Serializable{
     private String name;
     private String email;
 

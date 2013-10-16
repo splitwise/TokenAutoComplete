@@ -982,27 +982,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             super(in);
             prefix = in.readString();
             allowDuplicates = in.readInt() != 0;
-            switch (in.readInt()) {
-                case 1:
-                    tokenClickStyle = TokenClickStyle.Delete;
-                    break;
-                case 2:
-                    tokenClickStyle = TokenClickStyle.Select;
-                    break;
-                default:
-                    tokenClickStyle = TokenClickStyle.None;
-            }
-            switch (in.readInt()) {
-                case 1:
-                    tokenDeleteStyle = TokenDeleteStyle.PartialCompletion;
-                    break;
-                case 2:
-                    tokenDeleteStyle = TokenDeleteStyle.ToString;
-                    break;
-                default:
-                    tokenDeleteStyle = TokenDeleteStyle.Clear;
-
-            }
+            tokenClickStyle = TokenClickStyle.values()[in.readInt()];
+            tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
             baseObjects = (ArrayList<Serializable>)in.readSerializable();
         }
 
@@ -1015,26 +996,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             super.writeToParcel(out, flags);
             out.writeString(prefix);
             out.writeInt(allowDuplicates ? 1 : 0);
-            switch (tokenClickStyle) {
-                case Delete:
-                    out.writeInt(1);
-                    break;
-                case Select:
-                    out.writeInt(2);
-                    break;
-                default:
-                    out.writeInt(0);
-            }
-            switch (tokenDeleteStyle) {
-                case PartialCompletion:
-                    out.writeInt(1);
-                    break;
-                case ToString:
-                    out.writeInt(2);
-                    break;
-                default:
-                    out.writeInt(0);
-            }
+            out.writeInt(tokenClickStyle.ordinal());
+            out.writeInt(tokenDeleteStyle.ordinal());
             out.writeSerializable(baseObjects);
         }
 

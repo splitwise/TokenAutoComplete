@@ -653,7 +653,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
             prepView();
 
             canvas.save();
-            canvas.translate(x, bottom - view.getBottom());
+            //Centering the token looks like a better strategy that aligning the bottom
+            int padding = (bottom - top - view.getBottom()) / 2;
+            canvas.translate(x, bottom - view.getBottom() - padding);
             view.draw(canvas);
             canvas.restore();
         }

@@ -11,6 +11,6 @@
         android:text="Test Me"
         android:paddingLeft="3dp"
         android:paddingRight="3dp"
-        android:paddingTop="0dp"
+        android:paddingTop="2dp"
         android:paddingBottom="4dp" />
 </LinearLayout>

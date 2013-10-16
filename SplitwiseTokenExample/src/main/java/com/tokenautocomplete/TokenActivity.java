@@ -1,7 +1,7 @@
 package com.tokenautocomplete;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener {
@@ -55,11 +54,14 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         };
 
         completionView = (ContactsCompletionView)findViewById(R.id.searchView);
-        completionView.setPrefix("To: ");
         completionView.setAdapter(adapter);
         completionView.setTokenListener(this);
-        completionView.addObject(people[0]);
-        completionView.addObject(people[1]);
+
+        if (savedInstanceState == null) {
+            completionView.setPrefix("To: ");
+            completionView.addObject(people[0]);
+            completionView.addObject(people[1]);
+        }
 
         Button removeButton = (Button)findViewById(R.id.removeButton);
         removeButton.setOnClickListener(new View.OnClickListener() {

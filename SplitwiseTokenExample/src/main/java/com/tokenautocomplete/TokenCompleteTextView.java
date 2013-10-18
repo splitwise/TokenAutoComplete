@@ -23,7 +23,6 @@ import android.text.style.ReplacementSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Filter;
@@ -110,6 +109,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
             @Override
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+                //Detect single commas, remove them and complete the current token instead
+                if (source.length() == 1 && source.charAt(0) == ',') {
+                    performCompletion();
+                    return "";
+                }
+
                 //We need to not do anything when we would delete the prefix
                 if (dstart < prefix.length() && dend == prefix.length()) {
                     return prefix.substring(dstart, dend);
@@ -162,6 +167,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         deletionStyle = dStyle;
     }
 
+    @SuppressWarnings("unused")
     public void setTokenClickStyle(TokenClickStyle cStyle) {
         tokenClickStyle = cStyle;
     }
@@ -212,7 +218,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
      * @param completionText the current text we are completing against
      * @return a best guess for what the user meant to complete
      */
-
     abstract protected Object defaultObject(String completionText);
 
     protected String currentCompletionText() {
@@ -259,23 +264,18 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_COMMA) {
-            if (getListSelection() == ListView.INVALID_POSITION) {
-                Object bestGuess;
-                if (getAdapter().getCount() > 0) {
-                    bestGuess = getAdapter().getItem(0);
-                } else {
-                    bestGuess = defaultObject(currentCompletionText());
-                }
-                replaceText(convertSelectionToString(bestGuess));
+    public void performCompletion() {
+        if (getListSelection() == ListView.INVALID_POSITION) {
+            Object bestGuess;
+            if (getAdapter().getCount() > 0) {
+                bestGuess = getAdapter().getItem(0);
             } else {
-                performCompletion();
+                bestGuess = defaultObject(currentCompletionText());
             }
-            return true;
+            replaceText(convertSelectionToString(bestGuess));
+        } else {
+            super.performCompletion();
         }
-
-        return super.onKeyDown(keyCode, event);
     }
 
     @Override

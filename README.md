@@ -11,6 +11,8 @@ Setup
 
 * [Download the jar file](https://github.com/splitwise/TokenAutoComplete/releases) and add it to your project
 
+If you would like to get the most recent code in a jar, clone the project and run ```./gradlew jar``` from the root folder. This will build a tokenautocomplete.jar in ```SplitwiseTokenExample/build/libs/```.
+
 Creating your auto complete view
 --------------------------------
 
@@ -89,7 +91,7 @@ Token backgound drawable
 Person object code
 
 ```java
-public class Person {
+public class Person implements Serializable {
     private String name;
     private String email;
 
@@ -102,6 +104,8 @@ public class Person {
     public String toString() { return name; }
 }
 ```
+
+Note that the class implements ```Serializable```. In order to restore the view state properly, the ```TokenCompleteTextView``` needs to be able to save and restore your objects from disk. If your objects cannot be made ```Serializable```, please look at [restoring the view state].
 
 ### Create a layout and activity for your completion view
 
@@ -154,6 +158,18 @@ Layout code
 
 That's it! You can grab the objects the user tokenized with getObjects() on the TokenCompleteTextView when you need to get the data out.
 
+
+Setting a prefix prompt
+=======================
+
+If you have a short prompt like "To: ", you can probably get away with setting a drawable on the left side of the ```TokenCompleteTextView```. If you have something longer, you will probably not want your prefix to take up the whole height of the view. If you would like to have a prefix that only indents the first line, you should use ```setPrefix```. This code is a little quirky when restoring the activity, so you want to make sure it only gets called on a fresh start in ```onCreate```:
+
+```java
+if (savedInstanceState == null) {
+    completionView.setPrefix("Your bestest friends: ");
+}
+```
+
 Custom filtering
 ================
 
@@ -178,6 +194,11 @@ adapter = new FilteredArrayAdapter<Person>(this, android.R.layout.simple_list_it
     }
 };
 ```
+
+Duplicate objects
+=================
+
+In addition to custom filtering, you may want to make sure you don't accidentally miss something and get duplicate tokens. ```allowDuplicates(false)``` on the ```TokenCompleteTextView``` will prevent any tokens currently in the view from being added a second time. Token objects must implement ```equals``` correctly. Any text the user entered for the duplicate token will be cleared.
 
 Responding to user selections
 =============================
@@ -217,24 +238,141 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
 
 In Splitwise we use these callbacks to handle users selecting a group when adding an expense. When a user adds a group to an expense, we remove all the users in the group and the other groups from the array adapter. A user should only be able to select one group and it would be redundant to add users in the group to the expense again.
 
+Programatically add and remove objects
+======================================
+
+You may want to prefill the list with objects. For example when replying to an email, you would want the To: and CC: fields to have the correct emails in them. You can use ```addObject``` to put these tokens in. If you are using ```TokenDeleteStyle.PartialCompletion``` , you will want to call ```addObject(obj, "completion text")``` to get appropriate replacement text, otherwise just call ```addObject(obj)```. You can also remove objects programatically with ```removeObject``` though this will remove all objects that return true when calling ```equals``` on them. If you have copies in the array, you may need to take special care with this.
+
+Letting users click to select and delete tokens
+===============================================
+
+There are three different styles of click handling build into the project. Please open an issue if you need some behavior beyond this with your code! It's relatively easy to add custom click handling, but I'm not convinced anyone would need anything beyond the ones I've provided. Call ```setTokenClickStyle``` to change the behavior.
+
+#### TokenCompleteTextView.TokenClickStyle.None
+
+This is the default, even though it doesn't match the Gmail behavior. When the user clicks on a token, the view will move the cursor in front of or after the token. Users should not be able to get the cursor in the token as this causes confusing behavior.
+
+#### TokenCompleteTextView.TokenClickStyle.Delete
+
+When the user clicks on a token, the token will be removed from the field. If you need some kind of confirmation, handle it with the onTokenRemoved callback and re-add the token if the user changes their mind.
+
+#### TokenCompleteTextView.TokenClickStyle.Select
+
+This behavior most closely matches the Gmail token field behavior, but I did not make it the default to simplify the initial tutorial. The first click on a token will unselect any currently selected token views, then it will call ```setSelected(true)``` on the selected token. If you want to change the colors of the token, you will need to add appropriate drawables to your project. In the test project, we have the following:
+
+token_background.xml
+```xml
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/token_default" android:state_selected="false" />
+    <item android:drawable="@drawable/token_selected" android:state_selected="true" />
+</selector>
+```
+
+token_default.xml
+```xml
+<shape xmlns:android="http://schemas.android.com/apk/res/android" >
+    <stroke
+        android:width="1dp"
+        android:color="#ffd4d4d4" />
+    <solid android:color="#ffafafaf" />
+
+    <corners
+        android:topLeftRadius="3dp"
+        android:bottomLeftRadius="3dp"
+        android:topRightRadius="3dp"
+        android:bottomRightRadius="3dp"/>
+
+</shape>```
+
+token_selected.xml
+```xml
+<shape xmlns:android="http://schemas.android.com/apk/res/android" >
+    <stroke
+        android:width="1dp"
+        android:color="#ffa4a4a4" />
+    <solid android:color="#ff7a7a7a" />
+
+    <corners
+        android:topLeftRadius="3dp"
+        android:bottomLeftRadius="3dp"
+        android:topRightRadius="3dp"
+        android:bottomRightRadius="3dp"/>
+</shape>
+```
+
+If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view and override ```setSelected```. You can then make appropriate changes to the view:
+
+In some custom view implementation:
+```java
+@Override
+public void setSelected(boolean selected) {
+    super.setSelected(selected);
+
+    ImageView v = (ImageView)findViewById(R.id.icon);
+    if (selected) {
+        v.setImageDrawable(getResources().getDrawable(R.raw.close_x));
+    } else {
+        v.setImageDrawable(getResources().getDrawable(R.raw.user_icon));
+    }
+}
+```
+
 Custom completion delete behavior
 =================================
 
 We've defaulted to the gmail style delete handling. That is, the most recently completed token, when deleted, turns into the text that was there before. All other tokens simply disappear when deleted.
 
-While this is the best in our case, we've provided a couple of other options if you want them. Call setDeletionStyle on the TokenCompleteTextView for new behaviors.
+While this is the best in our case, we've provided a couple of other options if you want them. Call ```setDeletionStyle``` on the ```TokenCompleteTextView``` for different behaviors.
 
-#### TokenCompleteTextView.Clear
+#### TokenCompleteTextView.TokenDeleteStyle.Clear
 
 This is the default. The most recently completed token will turn into the partial completion text it replaces, all other tokens will just disappear when deleted
 
-#### TokenCompleteTextView.PartialCompletion
+#### TokenCompleteTextView.TokenDeleteStyle.PartialCompletion
 
 All tokens will turn into the partial completion text they replaced
 
-#### TokenCompleteTextView.ToString
+#### TokenCompleteTextView.TokenDeleteStyle.ToString
 
 Tokens will be replaced with the toString value of the objects they represent when they are deleted
+
+Restoring the view state
+========================
+
+If your token objects implement ```Serializable```, the ```TokenCompleteTextView``` will automatically handle ```onSaveInstanceState``` and ```onRestoreInstanceState```. If you cannot make your objects ```Serializable```, you should override ```getSerializableObjects``` and ```convertSerializableArrayToObjectArray```. ```getSerializableObjects``` should return an array of ```Serializable``` objects that can be used to rebuild your original objects when restoring the view state. ```convertSerializableArrayToObjectArray``` should take an array of ```Serializable``` objects and use them to rebuild your token objects.
+
+We use something similar to this at [splitwise](http://splitwise.com) to avoid saving complicated object graphs:
+
+```java
+@Override
+protected ArrayList<Object> convertSerializableArrayToObjectArray(ArrayList<Serializable> sers) {
+    ArrayList<Object> objs = new ArrayList<Object>();
+    for (Serializable s: sers) {
+        if (s instanceof Long) {
+            Contact c = Contact.loadFromDatabase((Long)s);
+            objs.add(c);
+        } else {
+            objs.add(s);
+        }
+    }
+
+    return objs;
+}
+
+@Override
+protected ArrayList<Serializable> getSerializableObjects() {
+    ArrayList<Serializable> s = new ArrayList<Serializable>();
+    for (Object obj: getObjects()) {
+        if (obj instanceof Serializable) {
+            s.add((Serializable)obj);
+        } else {
+            //obj is a Contact
+            s.add(((Contact)obj).getId());
+        }
+    }
+    return s;
+}
+```
 
 License
 =======

@@ -11,6 +11,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.InputType;
 import android.text.Layout;
 import android.text.SpanWatcher;
 import android.text.Spannable;
@@ -23,8 +24,11 @@ import android.text.style.ReplacementSpan;
 import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -43,7 +47,7 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
+public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
     //When the token is deleted...
     public enum TokenDeleteStyle {
         _Parent, //...do the parent behavior, not recommended
@@ -105,6 +109,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
         setLongClickable(false);
 
+        //In theory, get the soft keyboard to not supply suggestions. very unreliable < API 11
+        setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
+
+        setOnEditorActionListener(this);
         setFilters(new InputFilter[] {new InputFilter() {
 
             @Override
@@ -276,6 +284,89 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         } else {
             super.performCompletion();
         }
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        //Override normal multiline text handling of enter/done and force a done button
+        InputConnection connection = super.onCreateInputConnection(outAttrs);
+        int imeActions = outAttrs.imeOptions&EditorInfo.IME_MASK_ACTION;
+        if ((imeActions&EditorInfo.IME_ACTION_DONE) != 0) {
+            // clear the existing action
+            outAttrs.imeOptions ^= imeActions;
+            // set the DONE action
+            outAttrs.imeOptions |= EditorInfo.IME_ACTION_DONE;
+        }
+        if ((outAttrs.imeOptions&EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0) {
+            outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
+        }
+        return connection;
+    }
+
+    private boolean handleDone() {
+        //If there is enough text to filter, attempt to complete the token
+        if (enoughToFilter()) {
+            performCompletion();
+            return true;
+        } else {
+            //...otherwise look for the next field and focus it
+            //TODO: should clear existing text as well
+            View next = focusSearch(View.FOCUS_DOWN);
+            if (next == null) {
+                next = focusSearch(View.FOCUS_FORWARD);
+            }
+            if (next != null) {
+                next.requestFocus();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        boolean handled = false;
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_TAB:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+                if (Build.VERSION.SDK_INT >= 11) {
+                    if (event.hasNoModifiers()) {
+                        handled = handleDone();
+                    }
+                } else {
+                    handled = handleDone();
+                }
+                break;
+            case KeyEvent.KEYCODE_DEL:
+                if (tokenClickStyle == TokenClickStyle.Select) {
+                    Editable text = getText();
+                    if (text == null) break;
+
+                    TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+                    for (TokenImageSpan span: spans) {
+                        if (span.view.isSelected()) {
+                            removeSpan(span);
+                            handled = true;
+                            break;
+                        }
+                    }
+                }
+        }
+
+        if (!handled) {
+            return super.onKeyDown(keyCode, event);
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public boolean onEditorAction(TextView view, int action, KeyEvent keyEvent) {
+        if (action == EditorInfo.IME_ACTION_DONE) {
+            return handleDone();
+        }
+        return false;
     }
 
     @Override

@@ -10,7 +10,8 @@
         android:layout_height="wrap_content"
         android:hint="@string/email_prompt"
         android:textColor="@android:color/darker_gray"
-        android:textSize="19sp" />
+        android:textSize="19sp"
+        android:nextFocusDown="@+id/editText"/>
 
     <TextView
         android:layout_width="match_parent"

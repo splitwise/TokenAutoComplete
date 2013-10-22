@@ -333,8 +333,22 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
 
         if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
             //Don't let users select the prefix
-            setSelection(prefix.length(), prefix.length());
+            setSelection(prefix.length());
         } else {
+            Editable text = getText();
+            if (text != null) {
+                //Make sure if we are in a span, we select the spot 1 space after the span end
+                TokenImageSpan[] spans = text.getSpans(selStart, selEnd, TokenImageSpan.class);
+                for (TokenImageSpan span: spans) {
+                    int spanEnd = text.getSpanEnd(span);
+                    if (selStart <= spanEnd && text.getSpanStart(span) < selStart) {
+                        setSelection(spanEnd + 1);
+                        return;
+                    }
+                }
+
+            }
+
             super.onSelectionChanged(selStart, selEnd);
         }
     }
@@ -867,19 +881,39 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView {
         }
 
         static private float convertToLocalHorizontalCoordinate(float x, TextView tv) {
-            x -= tv.getTotalPaddingLeft();
+            if (tv.getLayout() == null) {
+                x -= tv.getCompoundPaddingLeft();
+            } else {
+                x -= tv.getTotalPaddingLeft();
+            }
             // Clamp the position to inside of the view.
             x = Math.max(0.0f, x);
-            x = Math.min(tv.getWidth() - tv.getTotalPaddingRight() - 1, x);
+            float rightSide = tv.getWidth() - 1;
+            if (tv.getLayout() == null) {
+                rightSide -= tv.getCompoundPaddingRight();
+            } else {
+                rightSide -= tv.getTotalPaddingRight();
+            }
+            x = Math.min(rightSide, x);
             x += tv.getScrollX();
             return x;
         }
 
         static private int getLineAtCoordinate(float y, TextView tv, Layout layout) {
-            y -= tv.getTotalPaddingTop();
+            if (tv.getLayout() == null) {
+                y -= tv.getCompoundPaddingTop();
+            } else {
+                y -= tv.getTotalPaddingTop();
+            }
             // Clamp the position to inside of the view.
             y = Math.max(0.0f, y);
-            y = Math.min(tv.getHeight() - tv.getTotalPaddingBottom() - 1, y);
+            float bottom = tv.getHeight() - 1;
+            if (tv.getLayout() == null) {
+                bottom -= tv.getCompoundPaddingBottom();
+            } else {
+                bottom -= tv.getTotalPaddingBottom();
+            }
+            y = Math.min(bottom, y);
             y += tv.getScrollY();
             return layout.getLineForVertical((int) y);
         }

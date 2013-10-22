@@ -22,3 +22,6 @@ local.properties
 .gradle
 .idea
 .DS_Store
+*.iml
+*.iws
+*.ipr

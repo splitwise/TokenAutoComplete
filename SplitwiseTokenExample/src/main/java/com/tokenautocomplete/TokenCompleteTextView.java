@@ -76,6 +76,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean allowDuplicates = true;
     private boolean initialized = false;
     private boolean savingState = false;
+    private boolean shouldFocusNext = false;
 
     private void resetListeners() {
         //reset listeners that get discarded when you set text
@@ -303,24 +304,29 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         return connection;
     }
 
-    private boolean handleDone() {
+    private void handleDone() {
         //If there is enough text to filter, attempt to complete the token
         if (enoughToFilter()) {
             performCompletion();
-            return true;
         } else {
             //...otherwise look for the next field and focus it
             //TODO: should clear existing text as well
+
             View next = focusSearch(View.FOCUS_DOWN);
-            if (next == null) {
-                next = focusSearch(View.FOCUS_FORWARD);
-            }
             if (next != null) {
                 next.requestFocus();
-                return true;
             }
         }
-        return false;
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        boolean handled = super.onKeyUp(keyCode, event);
+        if (shouldFocusNext) {
+            shouldFocusNext = false;
+            handleDone();
+        }
+        return handled;
     }
 
     @Override
@@ -332,10 +338,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             case KeyEvent.KEYCODE_DPAD_CENTER:
                 if (Build.VERSION.SDK_INT >= 11) {
                     if (event.hasNoModifiers()) {
-                        handled = handleDone();
+                        shouldFocusNext = true;
+                        handled = true;
                     }
                 } else {
-                    handled = handleDone();
+                    shouldFocusNext = true;
+                    handled = true;
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
@@ -354,17 +362,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 }
         }
 
-        if (!handled) {
-            return super.onKeyDown(keyCode, event);
-        } else {
-            return true;
-        }
+        return handled || super.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onEditorAction(TextView view, int action, KeyEvent keyEvent) {
         if (action == EditorInfo.IME_ACTION_DONE) {
-            return handleDone();
+            handleDone();
+            return true;
         }
         return false;
     }

@@ -245,8 +245,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     boolean inInvalidate = false;
     @Override
     public void invalidate() {
-        //Need to force the TextView private mEditor to reset as well on 4.x
-        if (Build.VERSION.SDK_INT >= 14 && initialized && !inInvalidate) {
+        //Need to force the TextView private mEditor variable to reset as well on API 16 and up
+        if (Build.VERSION.SDK_INT >= 16 && initialized && !inInvalidate) {
             inInvalidate = true;
             setShadowLayer(getShadowRadius(), getShadowDx(), getShadowDy(), getShadowColor());
             inInvalidate = false;

@@ -230,6 +230,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     abstract protected Object defaultObject(String completionText);
 
     protected String currentCompletionText() {
+        if (hintVisible) return ""; //Can't have any text if the hint is visible
+
         Editable editable = getText();
         int end = getSelectionEnd();
         int start = tokenizer.findTokenStart(editable, end);

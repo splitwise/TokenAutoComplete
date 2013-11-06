@@ -692,6 +692,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             }
 
             if (text.length() == testLength) {
+                hintVisible = true;
+
                 if (hint != null) {
                     return;//hint already visible
                 }
@@ -709,7 +711,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 text.setSpan(hintSpan, prefix.length(), prefix.length() + getHint().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 setSelection(prefix.length());
 
-                hintVisible = true;
             } else {
                 if (hint == null) {
                     return; //hint already removed

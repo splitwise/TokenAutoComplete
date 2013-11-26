@@ -1,1 +1,2 @@
-include ':SplitwiseTokenExample'
+include ':library'
+include ':example'

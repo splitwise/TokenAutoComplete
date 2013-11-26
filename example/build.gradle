@@ -1,0 +1,19 @@
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'android'
+
+android {
+    compileSdkVersion 17
+    buildToolsVersion "17.0.0"
+
+    defaultConfig {
+        minSdkVersion 8
+        targetSdkVersion 17
+    }
+
+    dependencies {
+        compile project(":library")
+    }
+}

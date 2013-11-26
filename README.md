@@ -14,7 +14,9 @@ Setup
 
 * [Download the jar file](https://github.com/splitwise/TokenAutoComplete/releases) and add it to your project
 
-If you would like to get the most recent code in a jar, clone the project and run ```./gradlew jar``` from the root folder. This will build a tokenautocomplete.jar in ```SplitwiseTokenExample/build/libs/```.
+If you would like to get the most recent code in a jar, clone the project and run ```./gradlew jar``` from the root folder. This will build a tokenautocomplete.jar in ```library/build/libs/```.
+
+You may also add the library as an Android Library to your project. All the library files live in ```library```.
 
 Creating your auto complete view
 --------------------------------

@@ -2,7 +2,7 @@ repositories {
     mavenCentral()
 }
 
-apply plugin: 'android'
+apply plugin: 'android-library'
 
 android {
     compileSdkVersion 17
@@ -17,8 +17,5 @@ android {
 task jar(type: Jar) {
     dependsOn assembleRelease
     baseName "tokenautocomplete"
-    from fileTree(dir: 'build/classes/release', includes: [
-        '**/TokenCompleteTextView*.class',
-        '**/FilteredArrayAdapter*.class'
-    ])
+    from fileTree(dir: 'build/classes/release')
 }

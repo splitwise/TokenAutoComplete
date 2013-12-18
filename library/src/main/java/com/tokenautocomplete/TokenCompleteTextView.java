@@ -59,9 +59,19 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     //When the user clicks on a token...
     public enum TokenClickStyle {
-        None, //...do nothing, but make sure the cursor is not in the token
-        Delete,//...delete the token
-        Select//...select the token. A second click will delete it.
+        None(false), //...do nothing, but make sure the cursor is not in the token
+        Delete(false),//...delete the token
+        Select(true),//...select the token. A second click will delete it.
+        SelectDeselect(true);
+
+        private boolean mIsSelectable = false;
+        TokenClickStyle(final boolean selectable) {
+            mIsSelectable = selectable;
+        }
+
+        public boolean isSelectable() {
+            return mIsSelectable;
+        }
     }
 
     private Tokenizer tokenizer;
@@ -353,7 +363,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
-                if (tokenClickStyle == TokenClickStyle.Select) {
+                if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
                     Editable text = getText();
                     if (text == null) break;
 
@@ -425,7 +435,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         //Never let users select text
         selEnd = selStart;
 
-        if (tokenClickStyle == TokenClickStyle.Select) {
+        if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
             Editable text = getText();
             if (text != null) {
                 clearSelections();
@@ -739,7 +749,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     private void clearSelections() {
-        if (tokenClickStyle != TokenClickStyle.Select) return;
+        if (tokenClickStyle == null || !tokenClickStyle.isSelectable()) return;
 
         Editable text = getText();
         if (text == null) return;
@@ -843,11 +853,20 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
             switch (tokenClickStyle) {
                 case Select:
+                case SelectDeselect:
+
                     if (!view.isSelected()) {
                         clearSelections();
                         view.setSelected(true);
                         break;
                     }
+
+                    if (tokenClickStyle == TokenClickStyle.SelectDeselect) {
+                        view.setSelected(false);
+                        invalidate();
+                        break;
+                    }
+
                     //If the view is already selected, we want to delete it
                 case Delete:
                     removeSpan(this);

@@ -63,6 +63,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         Select//...select the token. A second click will delete it.
     }
 
+    private char[] splitChar = {','};
     private Tokenizer tokenizer;
     private Object selectedObject;
     private TokenListener listener;
@@ -118,10 +119,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
             @Override
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                //Detect single commas, remove them and complete the current token instead
-                if (source.length() == 1 && source.charAt(0) == ',') {
-                    performCompletion();
-                    return "";
+                //Detect split characters, remove them and complete the current token instead
+                if(source.length() == 1){
+                    boolean isSplitChar = false;
+                    for(char c : splitChar) isSplitChar = source.charAt(0) == c || isSplitChar;
+                    if (isSplitChar) {
+                        performCompletion();
+                        return "";
+                    }
                 }
 
                 //We need to not do anything when we would delete the prefix
@@ -199,6 +204,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     public List<Object> getObjects() {
         return objects;
+    }
+
+    public void setSplitChar(char[] splitChar){
+        this.splitChar = splitChar;
+    }
+
+    public void setSplitChar(char splitChar){
+        this.setSplitChar(new char[]{splitChar});
     }
 
     /**

@@ -15,6 +15,7 @@ import android.text.InputType;
 import android.text.Layout;
 import android.text.SpanWatcher;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
@@ -35,6 +36,7 @@ import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
 import java.io.Serializable;
+import java.lang.Character;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -208,6 +210,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     public void setSplitChar(char[] splitChar){
         this.splitChar = splitChar;
+        // Keep the tokenizer and splitchars in sync
+        this.setTokenizer(new CharacterTokenizer(splitChar));
     }
 
     public void setSplitChar(char splitChar){
@@ -563,7 +567,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private SpannableStringBuilder buildSpannableForText(CharSequence text) {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
-        return new SpannableStringBuilder("," + tokenizer.terminateToken(text));
+        //Let's try not to use a space as the sentinel character
+        char sentinel = splitChar.length>1 && splitChar[0]==' ' ? splitChar[1] : splitChar[0];
+        return new SpannableStringBuilder(String.valueOf(sentinel) + tokenizer.terminateToken(text));
     }
 
     private TokenImageSpan buildSpanForObject(Object obj) {
@@ -1168,5 +1174,78 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 return new SavedState[size];
             }
         };
+    }
+
+    private class CharacterTokenizer implements Tokenizer{
+        ArrayList<Character> splitChar;
+
+        CharacterTokenizer(){
+            super();
+            this.splitChar = new ArrayList<Character>(1);
+            this.splitChar.add(',');
+        }
+
+        CharacterTokenizer(char[] splitChar){
+            super();
+            this.splitChar = new ArrayList<Character>(splitChar.length);
+            for(char c : splitChar) this.splitChar.add(c);
+        }
+
+        CharacterTokenizer(char splitChar){
+            super();
+            this.splitChar = new ArrayList<Character>(1);
+            this.splitChar.add(splitChar);
+        }
+
+        public int findTokenStart(CharSequence text, int cursor) {
+            int i = cursor;
+
+            while (i > 0 && !splitChar.contains(text.charAt(i - 1))) {
+                i--;
+            }
+            while (i < cursor && text.charAt(i) == ' ') {
+                i++;
+            }
+
+            return i;
+        }
+
+        public int findTokenEnd(CharSequence text, int cursor) {
+            int i = cursor;
+            int len = text.length();
+
+            while (i < len) {
+                if (splitChar.contains(text.charAt(i))) {
+                    return i;
+                } else {
+                    i++;
+                }
+            }
+
+            return len;
+        }
+
+        public CharSequence terminateToken(CharSequence text) {
+            int i = text.length();
+
+            while (i > 0 && text.charAt(i - 1) == ' ') {
+                i--;
+            }
+
+            if (i > 0 && splitChar.contains(text.charAt(i - 1))) {
+                return text;
+            } else {
+                // Try not to use a space as a token character
+                String token = (splitChar.size()>1 && splitChar.get(0)==' ' ? splitChar.get(1) : splitChar.get(0))+" ";
+                if (text instanceof Spanned) {
+                    SpannableString sp = new SpannableString(text + token);
+                    TextUtils.copySpansFrom((Spanned) text, 0, text.length(),
+                            Object.class, sp, 0);
+                    return sp;
+                } else {
+                    return text + token;
+                }
+            }
+        }
     }
 }

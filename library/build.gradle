@@ -3,14 +3,15 @@ repositories {
 }
 
 apply plugin: 'android-library'
+apply plugin: 'idea'
 
 android {
-    compileSdkVersion 17
-    buildToolsVersion "17.0.0"
+    compileSdkVersion 19
+    buildToolsVersion "19.0.0"
 
     defaultConfig {
         minSdkVersion 8
-        targetSdkVersion 17
+        targetSdkVersion 19
     }
 }
 

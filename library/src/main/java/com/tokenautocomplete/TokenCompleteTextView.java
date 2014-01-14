@@ -643,6 +643,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         });
     }
 
+    public void clear(){
+        objects.clear();
+        setText("");
+    }
+
     /**
      * Shorthand for addObject(object, "")
      *
@@ -669,7 +674,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 if (text == null) return;
 
                 TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                for (TokenImageSpan span: spans) {
+                for (TokenImageSpan span : spans) {
                     if (span.getToken().equals(object)) {
                         removeSpan(span);
                     }

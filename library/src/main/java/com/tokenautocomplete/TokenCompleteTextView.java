@@ -1,5 +1,6 @@
 package com.tokenautocomplete;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
@@ -81,6 +82,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
 
+    @TargetApi(14)
     private void resetListeners() {
         //reset listeners that get discarded when you set text
         Editable text = getText();
@@ -99,6 +101,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
+    @TargetApi(11)
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
         objects = new ArrayList<Object>();
@@ -264,6 +267,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     boolean inInvalidate = false;
     @Override
+    @TargetApi(16)
     public void invalidate() {
         //Need to force the TextView private mEditor variable to reset as well on API 16 and up
         if (Build.VERSION.SDK_INT >= 16 && initialized && !inInvalidate) {
@@ -349,6 +353,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @Override
+    @TargetApi(11)
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         boolean handled = false;
         switch (keyCode) {
@@ -394,6 +399,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @Override
+    @TargetApi(14)
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         Editable text = getText();
@@ -645,11 +651,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 }
             }
         });
-    }
-
-    public void clear(){
-        objects.clear();
-        setText("");
     }
 
     /**

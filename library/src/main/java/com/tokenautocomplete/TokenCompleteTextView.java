@@ -580,6 +580,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @Override
     protected void replaceText(CharSequence text) {
         clearComposingText();
+
+        // Don't build a token for an empty String
+        if(text=="") return;
+
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 

@@ -587,9 +587,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     protected void replaceText(CharSequence text) {
         clearComposingText();
 
-        // Don't build a token for an empty String
-        if(text=="") return;
-
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 
@@ -600,6 +597,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             start = prefix.length();
         }
         String original = TextUtils.substring(editable, start, end);
+
+        // Don't bother when the input String is empty
+        if(original.length()==0) return;
 
         if (editable != null) {
             if (!allowDuplicates && objects.contains(selectedObject)) {

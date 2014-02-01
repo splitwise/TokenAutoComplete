@@ -1080,6 +1080,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         state.tokenClickStyle = tokenClickStyle;
         state.tokenDeleteStyle = deletionStyle;
         state.baseObjects = baseObjects;
+        state.splitChar = splitChar;
 
         return state;
     }
@@ -1100,6 +1101,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         allowDuplicates = ss.allowDuplicates;
         tokenClickStyle = ss.tokenClickStyle;
         deletionStyle = ss.tokenDeleteStyle;
+        splitChar = ss.splitChar;
 
         resetListeners();
         for (Object obj: convertSerializableArrayToObjectArray(ss.baseObjects)) {
@@ -1130,6 +1132,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         TokenClickStyle tokenClickStyle;
         TokenDeleteStyle tokenDeleteStyle;
         ArrayList<Serializable> baseObjects;
+        char[] splitChar;
 
         @SuppressWarnings("unchecked")
         SavedState(Parcel in) {
@@ -1139,6 +1142,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
             baseObjects = (ArrayList<Serializable>)in.readSerializable();
+            splitChar = in.createCharArray();
         }
 
         SavedState(Parcelable superState) {
@@ -1153,6 +1157,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             out.writeInt(tokenClickStyle.ordinal());
             out.writeInt(tokenDeleteStyle.ordinal());
             out.writeSerializable(baseObjects);
+            out.writeCharArray(splitChar);
         }
 
         @Override

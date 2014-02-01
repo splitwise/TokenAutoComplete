@@ -79,6 +79,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private Layout lastLayout = null;
     private boolean allowDuplicates = true;
     private boolean initialized = false;
+    private boolean performBestGuess = true;
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
 
@@ -232,6 +233,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         allowDuplicates = allow;
     }
 
+    public void performBestGuess(boolean guess){
+        performBestGuess = guess;
+    }
+
     /**
      * A token view for the object
      *
@@ -299,7 +304,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     public void performCompletion() {
         if (getListSelection() == ListView.INVALID_POSITION) {
             Object bestGuess;
-            if (getAdapter().getCount() > 0) {
+            if (getAdapter().getCount() > 0  && performBestGuess) {
                 bestGuess = getAdapter().getItem(0);
             } else {
                 bestGuess = defaultObject(currentCompletionText());
@@ -588,7 +593,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         clearComposingText();
 
         // Don't build a token for an empty String
-        if(text=="") return;
+        if(selectedObject.toString().equals("")) return;
 
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
@@ -1087,9 +1092,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
         state.prefix = prefix;
         state.allowDuplicates = allowDuplicates;
+        state.performBestGuess = performBestGuess;
         state.tokenClickStyle = tokenClickStyle;
         state.tokenDeleteStyle = deletionStyle;
         state.baseObjects = baseObjects;
+        state.splitChar = splitChar;
 
         return state;
     }
@@ -1108,8 +1115,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         prefix = ss.prefix;
         updateHint();
         allowDuplicates = ss.allowDuplicates;
+        performBestGuess = ss.performBestGuess;
         tokenClickStyle = ss.tokenClickStyle;
         deletionStyle = ss.tokenDeleteStyle;
+        splitChar = ss.splitChar;
 
         resetListeners();
         for (Object obj: convertSerializableArrayToObjectArray(ss.baseObjects)) {
@@ -1137,18 +1146,22 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private static class SavedState extends BaseSavedState {
         String prefix;
         boolean allowDuplicates;
+        boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
         TokenDeleteStyle tokenDeleteStyle;
         ArrayList<Serializable> baseObjects;
+        char[] splitChar;
 
         @SuppressWarnings("unchecked")
         SavedState(Parcel in) {
             super(in);
             prefix = in.readString();
             allowDuplicates = in.readInt() != 0;
+            performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
             baseObjects = (ArrayList<Serializable>)in.readSerializable();
+            splitChar = in.createCharArray();
         }
 
         SavedState(Parcelable superState) {
@@ -1160,9 +1173,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             super.writeToParcel(out, flags);
             out.writeString(prefix);
             out.writeInt(allowDuplicates ? 1 : 0);
+            out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             out.writeInt(tokenDeleteStyle.ordinal());
             out.writeSerializable(baseObjects);
+            out.writeCharArray(splitChar);
         }
 
         @Override

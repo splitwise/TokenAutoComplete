@@ -1,5 +1,6 @@
 package com.tokenautocomplete;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
@@ -78,9 +79,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private Layout lastLayout = null;
     private boolean allowDuplicates = true;
     private boolean initialized = false;
+    private boolean performBestGuess = true;
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
 
+    @TargetApi(14)
     private void resetListeners() {
         //reset listeners that get discarded when you set text
         Editable text = getText();
@@ -99,6 +102,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
+    @TargetApi(11)
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
         objects = new ArrayList<Object>();
@@ -229,6 +233,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         allowDuplicates = allow;
     }
 
+    public void performBestGuess(boolean guess){
+        performBestGuess = guess;
+    }
+
     /**
      * A token view for the object
      *
@@ -264,6 +272,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     boolean inInvalidate = false;
     @Override
+    @TargetApi(16)
     public void invalidate() {
         //Need to force the TextView private mEditor variable to reset as well on API 16 and up
         if (Build.VERSION.SDK_INT >= 16 && initialized && !inInvalidate) {
@@ -295,7 +304,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     public void performCompletion() {
         if (getListSelection() == ListView.INVALID_POSITION) {
             Object bestGuess;
-            if (getAdapter().getCount() > 0) {
+            if (getAdapter().getCount() > 0  && performBestGuess) {
                 bestGuess = getAdapter().getItem(0);
             } else {
                 bestGuess = defaultObject(currentCompletionText());
@@ -349,6 +358,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @Override
+    @TargetApi(11)
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         boolean handled = false;
         switch (keyCode) {
@@ -394,6 +404,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @Override
+    @TargetApi(14)
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getActionMasked();
         Editable text = getText();
@@ -476,6 +487,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     protected void handleFocus(boolean hasFocus) {
         if (!hasFocus) {
+            // See if the user left any unfinished tokens and finish them
+            if(enoughToFilter()) performCompletion();
+
             setSingleLine(true);
 
             Editable text = getText();
@@ -580,6 +594,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @Override
     protected void replaceText(CharSequence text) {
         clearComposingText();
+
+        // Don't build a token for an empty String
+        if(selectedObject.toString().equals("")) return;
+
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 
@@ -669,7 +687,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 if (text == null) return;
 
                 TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                for (TokenImageSpan span: spans) {
+                for (TokenImageSpan span : spans) {
                     if (span.getToken().equals(object)) {
                         removeSpan(span);
                     }
@@ -1077,6 +1095,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
         state.prefix = prefix;
         state.allowDuplicates = allowDuplicates;
+        state.performBestGuess = performBestGuess;
         state.tokenClickStyle = tokenClickStyle;
         state.tokenDeleteStyle = deletionStyle;
         state.baseObjects = baseObjects;
@@ -1099,6 +1118,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         prefix = ss.prefix;
         updateHint();
         allowDuplicates = ss.allowDuplicates;
+        performBestGuess = ss.performBestGuess;
         tokenClickStyle = ss.tokenClickStyle;
         deletionStyle = ss.tokenDeleteStyle;
         splitChar = ss.splitChar;
@@ -1129,6 +1149,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private static class SavedState extends BaseSavedState {
         String prefix;
         boolean allowDuplicates;
+        boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
         TokenDeleteStyle tokenDeleteStyle;
         ArrayList<Serializable> baseObjects;
@@ -1139,6 +1160,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             super(in);
             prefix = in.readString();
             allowDuplicates = in.readInt() != 0;
+            performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
             baseObjects = (ArrayList<Serializable>)in.readSerializable();
@@ -1154,6 +1176,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             super.writeToParcel(out, flags);
             out.writeString(prefix);
             out.writeInt(allowDuplicates ? 1 : 0);
+            out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             out.writeInt(tokenDeleteStyle.ordinal());
             out.writeSerializable(baseObjects);

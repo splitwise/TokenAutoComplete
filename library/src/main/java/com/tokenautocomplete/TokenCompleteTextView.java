@@ -487,6 +487,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     protected void handleFocus(boolean hasFocus) {
         if (!hasFocus) {
+            // See if the user left any unfinished tokens and finish them
+            if(enoughToFilter()) performCompletion();
+
             setSingleLine(true);
 
             Editable text = getText();

@@ -313,6 +313,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         if ((outAttrs.imeOptions&EditorInfo.IME_FLAG_NO_ENTER_ACTION) != 0) {
             outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
         }
+
+        outAttrs.inputType = InputType.TYPE_NULL;
+
         return connection;
     }
 
@@ -343,6 +346,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+
         boolean handled = false;
         switch (keyCode) {
             case KeyEvent.KEYCODE_TAB:
@@ -360,6 +364,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 break;
             case KeyEvent.KEYCODE_DEL:
                 if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
+
                     Editable text = getText();
                     if (text == null) break;
 

@@ -576,9 +576,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {
-            if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
+            if (tokenSpan == null) {
                 editable.replace(start, end, " ");
-            } else if (tokenSpan == null) {
+            } else if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
                 editable.replace(start, end, " ");
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);

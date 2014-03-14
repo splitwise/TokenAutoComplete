@@ -554,6 +554,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     protected TokenImageSpan buildSpanForObject(Object obj) {
+        if (obj == null) {
+            return null;
+        }
         View tokenView = getViewForObject(obj);
         return new TokenImageSpan(tokenView, obj);
     }
@@ -573,7 +576,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {
-            if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
+            if (tokenSpan == null) {
+                editable.replace(start, end, " ");
+            } else if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
                 editable.replace(start, end, " ");
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);
@@ -594,6 +599,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         post(new Runnable() {
             @Override
             public void run() {
+                if (object == null) return;
                 if (!allowDuplicates && objects.contains(object)) return;
 
                 SpannableStringBuilder ssb = buildSpannableForText(sourceText);

@@ -48,9 +48,9 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
             }
 
             @Override
-            protected boolean keepObject(Person obj, String mask) {
+            protected boolean keepObject(Person person, String mask) {
                 mask = mask.toLowerCase();
-                return obj.getName().toLowerCase().startsWith(mask) || obj.getEmail().toLowerCase().startsWith(mask);
+                return person.getName().toLowerCase().startsWith(mask) || person.getEmail().toLowerCase().startsWith(mask);
             }
         };
 
@@ -68,9 +68,9 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         removeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                List<Object> objects = completionView.getObjects();
-                if (objects.size() > 0) {
-                    completionView.removeObject(objects.get(objects.size() - 1));
+                List<Person> people = completionView.getObjects();
+                if (people.size() > 0) {
+                    completionView.removeObject(people.get(people.size() - 1));
                 }
             }
         });

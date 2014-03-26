@@ -1,5 +1,6 @@
 package com.tokenautocomplete;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
@@ -47,7 +48,7 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
+public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
     //When the token is deleted...
     public enum TokenDeleteStyle {
         _Parent, //...do the parent behavior, not recommended
@@ -64,10 +65,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     private Tokenizer tokenizer;
-    private Object selectedObject;
+    private T selectedObject;
     private TokenListener listener;
     private TokenSpanWatcher spanWatcher;
-    private ArrayList<Object> objects;
+    private ArrayList<T> objects;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private String prefix = "";
@@ -98,7 +99,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     private void init() {
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
-        objects = new ArrayList<Object>();
+        objects = new ArrayList<>();
         Editable text = getText();
         assert null != text;
         spanWatcher = new TokenSpanWatcher();
@@ -197,7 +198,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         updateHint();
     }
 
-    public List<Object> getObjects() {
+    public List<T> getObjects() {
         return objects;
     }
 
@@ -218,7 +219,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * @param object the object selected by the user from the list
      * @return a view to display a token in the text field for the object
      */
-    abstract protected View getViewForObject(Object object);
+    abstract protected View getViewForObject(T object);
 
     /**
      * Provides a default completion when the user hits , and there is no item in the completion
@@ -227,7 +228,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * @param completionText the current text we are completing against
      * @return a best guess for what the user meant to complete
      */
-    abstract protected Object defaultObject(String completionText);
+    abstract protected T defaultObject(String completionText);
 
     protected String currentCompletionText() {
         if (hintVisible) return ""; //Can't have any text if the hint is visible
@@ -246,6 +247,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     boolean inInvalidate = false;
+
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void invalidate() {
         //Need to force the TextView private mEditor variable to reset as well on API 16 and up
@@ -528,9 +532,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     }
 
+    @SuppressWarnings("unchecked cast")
     @Override
     protected CharSequence convertSelectionToString(Object object) {
-        selectedObject = object;
+        selectedObject = (T) object;
 
         //if the token gets deleted, this text will get put in the field instead
         switch (deletionStyle) {
@@ -553,7 +558,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         return new SpannableStringBuilder("," + tokenizer.terminateToken(text));
     }
 
-    protected TokenImageSpan buildSpanForObject(Object obj) {
+    protected TokenImageSpan buildSpanForObject(T obj) {
         if (obj == null) {
             return null;
         }
@@ -595,7 +600,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * @param object the object to add to the displayed tokens
      * @param sourceText the text used if this object is deleted
      */
-    public void addObject(final Object object, final CharSequence sourceText) {
+    public void addObject(final T object, final CharSequence sourceText) {
         post(new Runnable() {
             @Override
             public void run() {
@@ -635,7 +640,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      *
      * @param object the object to add to the displayed token
      */
-    public void addObject(Object object) {
+    public void addObject(T object) {
         addObject(object, "");
     }
 
@@ -645,8 +650,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      *
      * @param object object to remove, may be null or not in the view
      */
-    @SuppressWarnings("unused")
-    public void removeObject(final Object object) {
+    public void removeObject(final T object) {
         post(new Runnable() {
             @Override
             public void run() {
@@ -822,14 +826,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     protected class TokenImageSpan extends ViewSpan {
-        private Object token;
+        private T token;
 
-        public TokenImageSpan(View d, Object token) {
+        public TokenImageSpan(View d, T token) {
             super(d);
             this.token = token;
         }
 
-        public Object getToken() {
+        public T getToken() {
             return this.token;
         }
 
@@ -859,26 +863,29 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     }
 
-    public static interface TokenListener {
-        public void onTokenAdded(Object token);
-        public void onTokenRemoved(Object token);
+    public static interface TokenListener<T> {
+        public void onTokenAdded(T token);
+        public void onTokenRemoved(T token);
     }
 
     private class TokenSpanWatcher implements SpanWatcher {
+
+        @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenImageSpan && !savingState) {
-                TokenImageSpan token = (TokenImageSpan)what;
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState) {
+                TokenImageSpan token = (TokenImageSpan) what;
                 objects.add(token.getToken());
                 if (listener != null)
                     listener.onTokenAdded(token.getToken());
             }
         }
 
+        @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenImageSpan && !savingState) {
-                TokenImageSpan token = (TokenImageSpan)what;
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState) {
+                TokenImageSpan token = (TokenImageSpan) what;
                 objects.remove(token.getToken());
                 if (listener != null)
                     listener.onTokenRemoved(token.getToken());
@@ -946,7 +953,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * this class supplements the TokenSpanWatcher to manually trigger span updates
      */
     private class TokenTextWatcherAPI8 extends TokenTextWatcher {
-        private ArrayList<TokenImageSpan> currentTokens = new ArrayList<TokenImageSpan>();
+        private ArrayList<TokenImageSpan> currentTokens = new ArrayList<>();
 
         @Override
         protected void removeToken(TokenImageSpan token, Editable text) {
@@ -1047,8 +1054,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @SuppressWarnings("unchecked")
-    protected ArrayList<Object> convertSerializableArrayToObjectArray(ArrayList<Serializable> s) {
-        return (ArrayList<Object>)(ArrayList)s;
+    protected ArrayList<T> convertSerializableArrayToObjectArray(ArrayList<Serializable> s) {
+        return (ArrayList<T>)(ArrayList)s;
     }
 
     @Override
@@ -1089,7 +1096,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         deletionStyle = ss.tokenDeleteStyle;
 
         resetListeners();
-        for (Object obj: convertSerializableArrayToObjectArray(ss.baseObjects)) {
+        for (T obj: convertSerializableArrayToObjectArray(ss.baseObjects)) {
             addObject(obj);
         }
 

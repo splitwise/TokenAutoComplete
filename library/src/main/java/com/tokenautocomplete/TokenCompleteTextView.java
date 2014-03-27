@@ -1,5 +1,6 @@
 package com.tokenautocomplete;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
@@ -256,6 +257,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     boolean inInvalidate = false;
+
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void invalidate() {
         //Need to force the TextView private mEditor variable to reset as well on API 16 and up

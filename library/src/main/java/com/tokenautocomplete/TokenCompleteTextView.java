@@ -682,13 +682,18 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         Editable text = getText();
         if (text == null) return;
 
-        if (Build.VERSION.SDK_INT < 14) {
+        //If the spanwatcher has been removed, we need to also manually trigger onSpanRemoved
+        TokenSpanWatcher[] spans = text.getSpans(0, text.length(), TokenSpanWatcher.class);
+        if (spans.length == 0) {
+            spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
+        } else if (Build.VERSION.SDK_INT < 14) {
             //HACK: Need to manually trigger on Span removed if there is only 1 object
             //not sure if there's a cleaner way
             if (objects.size() == 1) {
                 spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
             }
         }
+
         //Add 1 to the end because we put a " " at the end of the spans when adding them
         text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
     }

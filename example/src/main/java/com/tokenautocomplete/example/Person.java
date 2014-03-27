@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocomplete.example;
 
 import java.io.Serializable;
 

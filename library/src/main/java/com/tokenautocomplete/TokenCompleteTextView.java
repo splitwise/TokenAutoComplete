@@ -258,7 +258,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     boolean inInvalidate = false;
 
-
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     public void invalidate() {

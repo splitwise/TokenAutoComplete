@@ -1062,7 +1062,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             if (obj instanceof Serializable) {
                 serializables.add((Serializable)obj);
             } else {
-                System.out.println("Unable to save '" + obj.toString() + "'");
+                System.out.println("Unable to save '" + obj + "'");
             }
         }
         if (serializables.size() != objects.size()) {

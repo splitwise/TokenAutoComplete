@@ -28,6 +28,7 @@ import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.Filter;
@@ -825,6 +826,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         public CountSpan(int count, Context ctx, int textColor, int textSize, int maxWidth) {
             super(new TextView(ctx));
             TextView v = (TextView)view;
+            v.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT));
             v.setTextColor(textColor);
             v.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
             //Make the view as wide as the parent to push the tokens off screen
@@ -837,6 +839,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             text = "+" + count;
             ((TextView)view).setText(text);
         }
+
+        public int getCount() { return count; }
     }
 
     protected class TokenImageSpan extends ViewSpan {
@@ -892,11 +896,38 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     private class TokenSpanWatcher implements SpanWatcher {
+        private void updateCountSpan(final int change) {
+            final Editable text = getText();
+            if (text == null || lastLayout == null) return;
+
+            CountSpan[] counts = text.getSpans(0, text.length(), CountSpan.class);
+            if (counts.length == 1) {
+                final CountSpan span = counts[0];
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        int spanStart = text.getSpanStart(span);
+                        int spanEnd = text.getSpanEnd(span);
+                        span.setCount(span.getCount() + change);
+                        if (span.getCount() > 0) {
+                            text.replace(spanStart, spanEnd, span.text);
+                        } else {
+                            text.delete(spanStart, spanEnd);
+                            text.removeSpan(span);
+                        }
+                    }
+                });
+
+            }
+        }
+
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
             if (what instanceof TokenImageSpan && !savingState) {
                 TokenImageSpan token = (TokenImageSpan)what;
                 objects.add(token.getToken());
+                updateCountSpan(1);
+
                 if (listener != null)
                     listener.onTokenAdded(token.getToken());
             }
@@ -906,7 +937,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
             if (what instanceof TokenImageSpan && !savingState) {
                 TokenImageSpan token = (TokenImageSpan)what;
-                objects.remove(token.getToken());
+                if (objects.contains(token.getToken())) {
+                    objects.remove(token.getToken());
+                    updateCountSpan(-1);
+                }
+
                 if (listener != null)
                     listener.onTokenRemoved(token.getToken());
             }

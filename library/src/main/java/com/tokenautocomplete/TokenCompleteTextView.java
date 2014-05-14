@@ -31,6 +31,7 @@ import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -306,7 +307,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
         //Override normal multiline text handling of enter/done and force a done button
-        InputConnection connection = super.onCreateInputConnection(outAttrs);
+        TokenInputConnection connection = new TokenInputConnection(super.onCreateInputConnection(outAttrs), true);
         int imeActions = outAttrs.imeOptions&EditorInfo.IME_MASK_ACTION;
         if ((imeActions&EditorInfo.IME_ACTION_DONE) != 0) {
             // clear the existing action
@@ -363,22 +364,28 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
-                if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
-                    Editable text = getText();
-                    if (text == null) break;
-
-                    TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                    for (TokenImageSpan span: spans) {
-                        if (span.view.isSelected()) {
-                            removeSpan(span);
-                            handled = true;
-                            break;
-                        }
-                    }
-                }
+                handled = deleteSelectedObject(handled);
+                break;
         }
 
         return handled || super.onKeyDown(keyCode, event);
+    }
+
+    private boolean deleteSelectedObject(boolean handled) {
+        if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
+            Editable text = getText();
+            if (text == null) return handled;
+
+            TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+            for (TokenImageSpan span: spans) {
+                if (span.view.isSelected()) {
+                    removeSpan(span);
+                    handled = true;
+                    break;
+                }
+            }
+        }
+        return handled;
     }
 
     @Override
@@ -1223,5 +1230,23 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 return new SavedState[size];
             }
         };
+    }
+
+    private class TokenInputConnection extends InputConnectionWrapper {
+
+        public TokenInputConnection(InputConnection target, boolean mutable) {
+            super(target, mutable);
+        }
+
+        // This will fire if the soft keyboard delete key is pressed.
+        // The onKeyPressed method does not always do this.
+        @Override
+        public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+            if (deleteSelectedObject(false)) {
+                return true;
+            } else {
+                return super.deleteSurroundingText(beforeLength, afterLength);
+            }
+        }
     }
 }

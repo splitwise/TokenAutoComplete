@@ -2,18 +2,18 @@ repositories {
     mavenCentral()
 }
 
-apply plugin: 'android'
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile project(":library")
+}
 
 android {
-    compileSdkVersion 17
-    buildToolsVersion "19.0.3"
+    compileSdkVersion 19
+    buildToolsVersion "20"
 
     defaultConfig {
         minSdkVersion 8
         targetSdkVersion 19
-    }
-
-    dependencies {
-        compile project(":library")
     }
 }

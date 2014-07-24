@@ -90,6 +90,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean initialized = false;
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
+    private boolean allowCollapse = true;
 
     private void resetListeners() {
         //reset listeners that get discarded when you set text
@@ -223,6 +224,17 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @SuppressWarnings("unused")
     public void allowDuplicates(boolean allow) {
         allowDuplicates = allow;
+    }
+
+    /**
+     * Sets whether to allow duplicate objects. If false, when the user selects
+     * an object that's already in the view, the current text is just cleared.
+     *
+     * Defaults to true. Requires that the objects implement equals() correctly.
+     */
+    @SuppressWarnings("unused")
+    public void allowCollapse(boolean allow) {
+        allowCollapse = allow;
     }
 
     /**
@@ -482,7 +494,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     protected void handleFocus(boolean hasFocus) {
-        if (!hasFocus) {
+        if (!hasFocus && allowCollapse) {
             setSingleLine(true);
 
             Editable text = getText();

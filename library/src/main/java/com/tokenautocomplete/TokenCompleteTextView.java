@@ -717,8 +717,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             }
         }
 
-        //Add 1 to the end because we put a " " at the end of the spans when adding them
-        text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
+		text.removeSpan(span);
     }
 
     private void updateHint() {
@@ -980,7 +979,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private class TokenTextWatcher implements TextWatcher {
 
         protected void removeToken(TokenImageSpan token, Editable text) {
-            text.removeSpan(token);
+			removeSpan(token);
         }
 
         @Override

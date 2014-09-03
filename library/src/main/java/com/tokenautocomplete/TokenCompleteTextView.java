@@ -33,6 +33,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.Filter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
@@ -304,16 +305,30 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @Override
     public void performCompletion() {
         if (getListSelection() == ListView.INVALID_POSITION) {
-            Object bestGuess;
-            if (getAdapter().getCount() > 0) {
-                bestGuess = getAdapter().getItem(0);
-            } else {
-                bestGuess = defaultObject(currentCompletionText());
+            Object bestGuess = getBestGuess();
+            if (bestGuess != null) {
+                replaceText(convertSelectionToString(bestGuess));
+                return;
             }
-            replaceText(convertSelectionToString(bestGuess));
-        } else {
-            super.performCompletion();
         }
+        super.performCompletion();
+    }
+
+    private Object getBestGuess() {
+        String currentText = currentCompletionText();
+        if (TextUtils.isEmpty(currentText)) {
+            return null; // indicates the user just typed a single ',', so no text
+        }
+        ListAdapter adapter = getAdapter();
+        if (adapter.getCount() > 0) {
+            Object firstItem = adapter.getItem(0);
+            if (currentText.equals(convertSelectionToString(firstItem))) {
+                // prefixes aren't good enough; we want it to match the full string
+                return firstItem;
+            }
+        }
+        // create a new tag
+        return defaultObject(currentText);
     }
 
     @Override

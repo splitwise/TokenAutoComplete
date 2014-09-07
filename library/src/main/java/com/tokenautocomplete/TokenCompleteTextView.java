@@ -1017,7 +1017,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                         text.delete(spanEnd, spanEnd + 1);
                     }
 
-                    if (spanStart >= 0 && text.charAt(spanStart) == ',') {
+                    if (spanStart > 0 && text.charAt(spanStart) == ',') {
                         text.delete(spanStart, spanStart + 1);
                     }
                 }

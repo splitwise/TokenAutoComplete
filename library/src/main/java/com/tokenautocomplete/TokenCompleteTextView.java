@@ -990,6 +990,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
+            System.out.println("changing text: " + s);
             Editable text = getText();
             if (text == null)
                 return;
@@ -1040,7 +1041,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             currentTokens.clear();
-
             Editable text = getText();
             if (text == null)
                 return;
@@ -1256,11 +1256,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         // The onKeyPressed method does not always do this.
         @Override
         public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-            if (deleteSelectedObject(false)) {
-                return true;
-            } else {
-                return super.deleteSurroundingText(beforeLength, afterLength);
-            }
+            System.out.println("before: " + beforeLength + " after: " + afterLength);
+            System.out.println("selection: " + getSelectionStart() + " end: " +getSelectionEnd());
+
+            //Shouldn't be able to delete prefix, so don't do anything
+            if (getSelectionStart() <= prefix.length())
+                beforeLength = 0;
+
+            return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
         }
     }
 }

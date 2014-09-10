@@ -1,8 +1,6 @@
 package com.tokenautocomplete;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 import android.widget.ArrayAdapter;
 import android.widget.Filter;
 
@@ -26,30 +24,6 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
     private List<T> originalObjects;
     private Filter filter;
-
-    /**
-     * Constructor
-     *
-     * @param context The current context.
-     * @param resource The resource ID for a layout file containing a TextView to use when
-     *                 instantiating views.
-     */
-    @SuppressWarnings("unused")
-    public FilteredArrayAdapter(Context context, int resource) {
-        this(context, resource, 0);
-    }
-
-    /**
-     * Constructor
-     *
-     * @param context The current context.
-     * @param resource The resource ID for a layout file containing a layout to use when
-     *                 instantiating views.
-     * @param textViewResourceId The id of the TextView within the layout resource to be populated
-     */
-    public FilteredArrayAdapter(Context context, int resource, int textViewResourceId) {
-        this(context, resource, textViewResourceId, new ArrayList<T>());
-    }
 
     /**
      * Constructor
@@ -180,29 +154,11 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
         protected void publishResults(CharSequence constraint, FilterResults results) {
             clear();
             if (results.count > 0) {
-                if (Build.VERSION.SDK_INT > 11) {
-                    API11AddAll.addAll(FilteredArrayAdapter.this, (Collection)results.values);
-                } else {
-                    Collection<T>objects = (Collection<T>)results.values;
-                    if (objects != null) {
-                        for (T object: objects) {
-                            add(object);
-                        }
-                    }
-                }
+                FilteredArrayAdapter.this.addAll((Collection)results.values);
                 notifyDataSetChanged();
             } else {
                 notifyDataSetInvalidated();
             }
         }
     }
-
-    private static class API11AddAll {
-        @TargetApi(11)
-        @SuppressWarnings("unchecked")
-        public static void addAll(FilteredArrayAdapter adapter, Collection objects) {
-            adapter.addAll(objects);
-        }
-    }
-
 }

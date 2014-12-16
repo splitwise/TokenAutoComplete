@@ -490,28 +490,31 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 int count = objects.size() - tokens.length;
                 if (count > 0) {
                     lastPosition++;
+
                     CountSpan cs = new CountSpan(count, getContext(), getCurrentTextColor(),
                             (int)getTextSize(), (int)maxTextWidth());
-                    text.insert(lastPosition, cs.text);
+                    if(lastPosition < text.length()) {
+                        text.insert(lastPosition, cs.text);
 
-                    float newWidth = Layout.getDesiredWidth(text, 0,
-                            lastPosition + cs.text.length(), lastLayout.getPaint());
-                    //If the +x span will be moved off screen, move it one token in
-                    if (newWidth > maxTextWidth()) {
-                        text.delete(lastPosition, lastPosition + cs.text.length());
+                        float newWidth = Layout.getDesiredWidth(text, 0,
+                                lastPosition + cs.text.length(), lastLayout.getPaint());
+                        //If the +x span will be moved off screen, move it one token in
+                        if (newWidth > maxTextWidth()) {
+                            text.delete(lastPosition, lastPosition + cs.text.length());
 
-                        if (tokens.length > 0) {
-                            TokenImageSpan token = tokens[tokens.length - 1];
-                            lastPosition = text.getSpanStart(token);
-                            cs.setCount(count + 1);
-                        } else {
-                            lastPosition = prefix.length();
+                            if (tokens.length > 0) {
+                                TokenImageSpan token = tokens[tokens.length - 1];
+                                lastPosition = text.getSpanStart(token);
+                                cs.setCount(count + 1);
+                            } else {
+                                lastPosition = prefix.length();
+                            }
+
+                            text.insert(lastPosition, cs.text);
                         }
 
-                        text.insert(lastPosition, cs.text);
+                        text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
-
-                    text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 }
             }
 

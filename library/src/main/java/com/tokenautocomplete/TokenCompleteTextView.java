@@ -679,7 +679,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 if (text == null) return;
 
                 TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                for (TokenImageSpan span: spans) {
+                for (TokenImageSpan span : spans) {
                     if (span.getToken().equals(object)) {
                         removeSpan(span);
                     }
@@ -688,7 +688,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         });
     }
 
-    private void removeSpan(TokenImageSpan span) {
+    protected final void removeSpan(TokenImageSpan span) {
         Editable text = getText();
         if (text == null) return;
 
@@ -995,11 +995,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     //The end of the span is the character index after it
                     spanEnd--;
 
-                    if (spanEnd >= 0 && text.charAt(spanEnd) == ',') {
+                    if (spanEnd >= 0 && spanEnd < text.length() && text.charAt(spanEnd) == ',') {
                         text.delete(spanEnd, spanEnd + 1);
                     }
 
-                    if (spanStart > 0 && text.charAt(spanStart) == ',') {
+                    if (spanStart > 0 && spanStart < text.length() && text.charAt(spanStart) == ',') {
                         text.delete(spanStart, spanStart + 1);
                     }
                 }

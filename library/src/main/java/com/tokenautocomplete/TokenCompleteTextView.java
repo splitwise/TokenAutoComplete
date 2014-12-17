@@ -711,6 +711,32 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
     }
 
+    /**
+     * Remove all objects from the token list.
+     * We're handling this separately because removeObject doesn't always reliably trigger
+     * onSpanRemoved when called too fast.
+     * If removeObject is working for you, you probably shouldn't be using this.
+     */
+    public void clear() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                // If there's not text, we're already empty
+                Editable text = getText();
+                if (text == null) return;
+
+                // Get all spans in the EditText and remove them
+                TokenImageSpan[] spans = text.getSpans(0,text.length(),TokenImageSpan.class);
+                for(TokenImageSpan span :spans){
+                    removeSpan(span);
+
+                    // Make sure the callback gets called
+                    spanWatcher.onSpanRemoved(text,span,text.getSpanStart(span),text.getSpanEnd(span));
+                }
+            }
+        });
+    }
+
     private void updateHint() {
         Editable text = getText();
         CharSequence hintText = getHint();

@@ -30,6 +30,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.Filter;
@@ -123,7 +125,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
                 //Detect single commas, remove them and complete the current token instead
                 if (source.length() == 1 && source.charAt(0) == ',') {
-                    if (dest.length() > 0) performCompletion();
+                    final String destString = new String(dest.toString());
+                    if (destString.length() > 0
+                            && destString.replaceAll(",", "").replaceAll(" ", "").length() > 0) {
+                        performCompletion();
+                    }
                     return "";
                 }
 
@@ -612,6 +618,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
+    @Override
+    public boolean extractText(ExtractedTextRequest request, ExtractedText outText) {
+        try {
+            return super.extractText(request, outText);
+        } catch (IndexOutOfBoundsException ignored) {
+            return false;
+        }
+    }
 
     /**
      * Append a token object to the object list
@@ -700,7 +714,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
 
         //Add 1 to the end because we put a " " at the end of the spans when adding them
-        text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
+        try {
+            text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
     private void updateHint() {
@@ -1165,6 +1183,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             if (getSelectionStart() <= prefix.length())
                 beforeLength = 0;
 
+            if(beforeLength > afterLength) {
+                return deleteSelectedObject(false);
+            }
             return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
         }
     }

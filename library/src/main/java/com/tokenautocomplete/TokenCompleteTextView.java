@@ -30,8 +30,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.ExtractedText;
-import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputConnectionWrapper;
 import android.widget.Filter;
@@ -618,15 +616,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
-    @Override
-    public boolean extractText(ExtractedTextRequest request, ExtractedText outText) {
-        try {
-            return super.extractText(request, outText);
-        } catch (IndexOutOfBoundsException ignored) {
-            return false;
-        }
-    }
-
     /**
      * Append a token object to the object list
      *
@@ -718,6 +707,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
         } catch (Throwable t) {
             t.printStackTrace();
+            setText(null);
         }
     }
 

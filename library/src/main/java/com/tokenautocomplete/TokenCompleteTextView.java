@@ -698,17 +698,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
         //If the spanwatcher has been removed, we need to also manually trigger onSpanRemoved
         TokenSpanWatcher[] spans = text.getSpans(0, text.length(), TokenSpanWatcher.class);
-        if (spans.length == 0) {
+//        if (spans.length == 0) {
             spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
-        }
+//        }
 
         //Add 1 to the end because we put a " " at the end of the spans when adding them
-        try {
             text.delete(text.getSpanStart(span), text.getSpanEnd(span) + 1);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            setText(null);
-        }
     }
 
     private void updateHint() {

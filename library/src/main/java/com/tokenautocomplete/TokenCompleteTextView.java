@@ -80,6 +80,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private String prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
+    private boolean allowCollapse = true;
     private boolean allowDuplicates = true;
     private boolean focusChanging = false;
     private boolean initialized = false;
@@ -87,9 +88,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
 
+    /**
+     * Make sure the TextChangedListeners are set
+     */
     @TargetApi(14)
     private void resetListeners() {
-        //reset listeners that get discarded when you set text
         Editable text = getText();
         if (text != null) {
             text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
@@ -106,9 +109,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
+    /**
+     * Initialise the variables and various listeners
+     */
     @TargetApi(11)
     private void init() {
         if(initialized) return;
+
+        // Initialise variables
         setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
         objects = new ArrayList<>();
         Editable text = getText();
@@ -116,6 +124,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         spanWatcher = new TokenSpanWatcher();
         hiddenSpans = new ArrayList<>();
 
+        // Initialise TextChangedListeners
         resetListeners();
 
         if (Build.VERSION.SDK_INT >= 11) {
@@ -127,9 +136,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         setInputType(getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
         setHorizontallyScrolling(false);
 
-        //setOnEditorActionListener(this);
-        setFilters(new InputFilter[] {new InputFilter() {
+        // Listen to IME action keys
+        setOnEditorActionListener(this);
 
+        // Initialise the textfilter (listens for the splitchars)
+        setFilters(new InputFilter[] {new InputFilter() {
             @Override
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
                 //Detect split characters, remove them and complete the current token instead
@@ -172,7 +183,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     @Override
-    protected void performFiltering(CharSequence text, int start, int end,
+    protected void performFiltering(@NonNull CharSequence text, int start, int end,
                                     int keyCode) {
         if (start < prefix.length()) {
             start = prefix.length();
@@ -190,19 +201,39 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         tokenizer = t;
     }
 
+    /**
+     * Set the action to be taken when a Token is removed
+     *
+     * @param dStyle The TokenDeleteStyle
+     */
     public void setDeletionStyle(TokenDeleteStyle dStyle) {
         deletionStyle = dStyle;
     }
 
+    /**
+     * Set the action to be taken when a Token is clicked
+     *
+     * @param cStyle The TokenClickStyle
+     */
     @SuppressWarnings("unused")
     public void setTokenClickStyle(TokenClickStyle cStyle) {
         tokenClickStyle = cStyle;
     }
 
+    /**
+     * Set the listener that will be notified of changes in the Tokenlist
+     *
+     * @param l The TokenListener
+     */
     public void setTokenListener(TokenListener l) {
         listener = l;
     }
 
+    /**
+     * I think this sets the hint text
+     *
+     * @param p String with the hint
+     */
     public void setPrefix(String p) {
         //Have to clear and set the actual text before saving the prefix to avoid the prefix filter
         prefix = "";
@@ -215,16 +246,31 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         updateHint();
     }
 
+    /**
+     * Get the list of Tokens
+     *
+     * @return List of tokens
+     */
     public List<Object> getObjects() {
         return objects;
     }
 
+    /**
+     * Set a list of characters that should trigger the token creation
+     *
+     * @param splitChar char[] with a characters that trigger the token creation
+     */
     public void setSplitChar(char[] splitChar){
         this.splitChar = splitChar;
         // Keep the tokenizer and splitchars in sync
         this.setTokenizer(new CharacterTokenizer(splitChar));
     }
 
+    /**
+     * Sets a single character to trigger the token creation
+     * @param splitChar char that triggers the token creation
+     */
+    @SuppressWarnings("unused")
     public void setSplitChar(char splitChar){
         this.setSplitChar(new char[]{splitChar});
     }
@@ -232,18 +278,34 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     /**
      * Sets whether to allow duplicate objects. If false, when the user selects
      * an object that's already in the view, the current text is just cleared.
-     *
      * Defaults to true. Requires that the objects implement equals() correctly.
+     *
+     * @param allow boolean
      */
     @SuppressWarnings("unused")
     public void allowDuplicates(boolean allow) {
         allowDuplicates = allow;
     }
 
+    /**
+     * Set whether we try to guess an entry from the autocomplete spinner or allow any text to be
+     * entered
+     *
+     * @param guess true to enable guessing
+     */
+    @SuppressWarnings("unused")
     public void performBestGuess(boolean guess){
         performBestGuess = guess;
     }
 
+    /**
+     * Set whether the view should collapse to a single line when it loses focus.
+     * @param allowCollapse true if it should collapse
+     */
+    @SuppressWarnings("unused")
+    public void allowCollapse(boolean allowCollapse) {
+        this.allowCollapse = allowCollapse;
+    }
     /**
      * A token view for the object
      *
@@ -329,14 +391,15 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         return conn;
     }
 
+    /**
+     * Create a token and focus the next field when the user sends the DONE IME action
+     */
     private void handleDone() {
-        //If there is enough text to filter, attempt to complete the token
+        // If there is enough text to filter, attempt to complete the token
         if (enoughToFilter()) {
             performCompletion();
         } else {
-            //...otherwise look for the next field and focus it
-            //TODO: should clear existing text as well
-
+            // Look for the next field and focus it otherwise
             View next = focusSearch(View.FOCUS_DOWN);
             if (next != null) {
                 next.requestFocus();
@@ -482,19 +545,23 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         lastLayout = getLayout(); //Used for checking text positions
     }
 
-    protected void handleFocus(boolean hasFocus) {
+    /**
+     * Collapse the view by removing all the tokens not on the first line. Displays a "+x" token.
+     * Restores the hidden tokens when the view gains focus.
+     *
+     * @param hasFocus boolean indicating whether we have the focus or not.
+     */
+    protected void performCollapse(boolean hasFocus) {
         // Pause the spanwatcher
         focusChanging = true;
         if (!hasFocus) {
-            // See if the user left any unfinished tokens and finish them
-            if(enoughToFilter()) performCompletion();
-
             Editable text = getText();
             if (text != null && lastLayout != null) {
-                //Display +x thingy if appropriate
+                // Display +x thingy if appropriate
                 int lastPosition = lastLayout.getLineVisibleEnd(0);
                 TokenImageSpan[] tokens = text.getSpans(0, lastPosition, TokenImageSpan.class);
                 int count = objects.size() - tokens.length;
+
                 if (count > 0) {
                     lastPosition++;
                     CountSpan cs = new CountSpan(count, getContext(), getCurrentTextColor(),
@@ -527,9 +594,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     }
                 }
             }
-
-
-        } else {
+        }
+        else {
             final Editable text = getText();
             if (text != null) {
                 CountSpan[] counts = text.getSpans(0, text.length(), CountSpan.class);
@@ -571,7 +637,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     @Override
     public void onFocusChanged(boolean hasFocus, int direction, Rect previous) {
         super.onFocusChanged(hasFocus, direction, previous);
-        handleFocus(hasFocus);
+
+        // See if the user left any unfinished tokens and finish them
+        if(enoughToFilter()) performCompletion();
+
+        // Collapse the view to a single line
+        if(allowCollapse) performCollapse(hasFocus);
     }
 
     @Override
@@ -784,6 +855,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * onSpanRemoved when called too fast.
      * If removeObject is working for you, you probably shouldn't be using this.
      */
+    @SuppressWarnings("unused")
     public void clear() {
         post(new Runnable() {
             @Override
@@ -930,7 +1002,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         public String text = "";
         private int count;
 
-        public CountSpan(int count, Context ctx, int textColor, int textSize, int maxWidth) {
+        public CountSpan(int count, Context ctx, int textColor, int textSize,@SuppressWarnings("unused") int maxWidth) {
             super(new TextView(ctx));
             TextView v = (TextView)view;
             v.setTextColor(textColor);
@@ -980,7 +1052,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     }
             }
         }
-
     }
 
     public static interface TokenListener {
@@ -1057,7 +1128,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                         text.delete(spanEnd, spanEnd + 1);
                     }
 
-                    if (spanStart >= 0 && text.charAt(spanStart) == ',') {
+                    if (spanStart > 0 && text.charAt(spanStart) == ',') {
                         text.delete(spanStart, spanStart + 1);
                     }
                 }
@@ -1070,7 +1141,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * this class supplements the TokenSpanWatcher to manually trigger span updates
      */
     private class TokenTextWatcherAPI8 extends TokenTextWatcher {
-        private ArrayList<TokenImageSpan> currentTokens = new ArrayList<TokenImageSpan>();
+        private ArrayList<TokenImageSpan> currentTokens = new ArrayList<>();
 
         @Override
         protected void removeToken(TokenImageSpan token, Editable text) {
@@ -1154,7 +1225,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     protected ArrayList<Serializable> getSerializableObjects() {
-        ArrayList<Serializable> serializables = new ArrayList<Serializable>();
+        ArrayList<Serializable> serializables = new ArrayList<>();
         for (Object obj: getObjects()) {
             if (obj instanceof Serializable) {
                 serializables.add((Serializable)obj);
@@ -1187,6 +1258,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         SavedState state = new SavedState(superState);
 
         state.prefix = prefix;
+        state.allowCollapse = allowCollapse;
         state.allowDuplicates = allowDuplicates;
         state.performBestGuess = performBestGuess;
         state.tokenClickStyle = tokenClickStyle;
@@ -1210,6 +1282,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         setText(ss.prefix);
         prefix = ss.prefix;
         updateHint();
+        allowCollapse = ss.allowCollapse;
         allowDuplicates = ss.allowDuplicates;
         performBestGuess = ss.performBestGuess;
         tokenClickStyle = ss.tokenClickStyle;
@@ -1223,12 +1296,12 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
         //This needs to happen after all the objects get added (which also get posted)
         //or the view truncates really oddly
-        if (!isFocused()) {
+        if (!isFocused() && allowCollapse) {
             post(new Runnable() {
                 @Override
                 public void run() {
-                    //Resize the view nad display the +x if appropriate
-                    handleFocus(isFocused());
+                    //Resize the view and display the +x if appropriate
+                    performCollapse(isFocused());
                 }
             });
         }
@@ -1241,6 +1314,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      */
     private static class SavedState extends BaseSavedState {
         String prefix;
+        boolean allowCollapse;
         boolean allowDuplicates;
         boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
@@ -1252,6 +1326,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         SavedState(Parcel in) {
             super(in);
             prefix = in.readString();
+            allowCollapse = in.readInt() != 0;
             allowDuplicates = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
@@ -1265,9 +1340,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
 
         @Override
-        public void writeToParcel(Parcel out, int flags) {
+        public void writeToParcel(@NonNull Parcel out, int flags) {
             super.writeToParcel(out, flags);
             out.writeString(prefix);
+            out.writeInt(allowCollapse ? 1 : 0);
             out.writeInt(allowDuplicates ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
@@ -1300,21 +1376,23 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private class CharacterTokenizer implements Tokenizer{
         ArrayList<Character> splitChar;
 
+        @SuppressWarnings("unused")
         CharacterTokenizer(){
             super();
-            this.splitChar = new ArrayList<Character>(1);
+            this.splitChar = new ArrayList<>(1);
             this.splitChar.add(',');
         }
 
         CharacterTokenizer(char[] splitChar){
             super();
-            this.splitChar = new ArrayList<Character>(splitChar.length);
+            this.splitChar = new ArrayList<>(splitChar.length);
             for(char c : splitChar) this.splitChar.add(c);
         }
 
+        @SuppressWarnings("unused")
         CharacterTokenizer(char splitChar){
             super();
-            this.splitChar = new ArrayList<Character>(1);
+            this.splitChar = new ArrayList<>(1);
             this.splitChar.add(splitChar);
         }
 

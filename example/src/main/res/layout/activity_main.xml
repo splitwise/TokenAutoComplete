@@ -9,9 +9,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/email_prompt"
+        android:imeOptions="actionDone"
         android:textColor="@android:color/darker_gray"
         android:textSize="19sp"
-        android:nextFocusDown="@+id/editText"/>
+        android:nextFocusDown="@+id/editText"
+        android:inputType="text|textNoSuggestions|textMultiLine|textAutoComplete"
+        android:focusableInTouchMode="true" />
 
     <TextView
         android:layout_width="match_parent"

@@ -230,7 +230,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     }
 
     /**
-     * I think this sets the hint text
+     * A String of text that is shown before all the tokens inside the EditText
+     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
      *
      * @param p String with the hint
      */
@@ -388,6 +389,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
         InputConnection conn = super.onCreateInputConnection(outAttrs);
         outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
+        outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_EXTRACT_UI;
         return conn;
     }
 

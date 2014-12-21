@@ -1,4 +1,4 @@
-TokenAutoComplete 
+TokenAutoComplete
 =================
 
 TokenAutoComplete is a Android Gmail style token  auto-complete text field and filter. It's designed to have an extremely simple API to make it easy for anyone to implement this functionality while still exposing enough customization to let you make it awesome.
@@ -247,6 +247,7 @@ Programatically add and remove objects
 ======================================
 
 You may want to prefill the list with objects. For example when replying to an email, you would want the To: and CC: fields to have the correct emails in them. You can use ```addObject``` to put these tokens in. If you are using ```TokenDeleteStyle.PartialCompletion``` , you will want to call ```addObject(obj, "completion text")``` to get appropriate replacement text, otherwise just call ```addObject(obj)```. You can also remove objects programatically with ```removeObject``` though this will remove all objects that return true when calling ```equals``` on them. If you have copies in the array, you may need to take special care with this.
+Finally there is a ```clear``` function to empty the EditText and remove all the objects.
 
 Letting users click to select and delete tokens
 ===============================================
@@ -379,10 +380,21 @@ protected ArrayList<Serializable> getSerializableObjects() {
 }
 ```
 
+Other options
+=============
+* Turn off making a best guess when converting text into a token (allows free entry)
+```java
+performBestGuess(false);
+```
+* Collapse the TokenCompleteTextView to a single line when it loses focus
+```java
+allowCollapse(true);
+```
+
 License
 =======
 
-    Copyright (c) 2013 splitwise
+    Copyright (c) 2013, 2014 splitwise, Wouter Dullaert
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

@@ -13,7 +13,7 @@
         android:textColor="@android:color/darker_gray"
         android:textSize="19sp"
         android:nextFocusDown="@+id/editText"
-        android:inputType="text|textNoSuggestions|textMultiLine|textAutoComplete"
+        android:inputType="text|textNoSuggestions|textMultiLine"
         android:focusableInTouchMode="true" />
 
     <TextView

@@ -258,10 +258,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     /**
      * Set a list of characters that should trigger the token creation
+     * Because spaces are difficult to handle, we add '§' as an additional splitChar
      *
      * @param splitChar char[] with a characters that trigger the token creation
      */
     public void setSplitChar(char[] splitChar){
+        if(splitChar[0] == ' ') {
+            splitChar = new char[]{splitChar.length>1 ? splitChar[1] : '§', splitChar[0]};
+        }
         this.splitChar = splitChar;
         // Keep the tokenizer and splitchars in sync
         this.setTokenizer(new CharacterTokenizer(splitChar));
@@ -269,11 +273,26 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     /**
      * Sets a single character to trigger the token creation
+     *
      * @param splitChar char that triggers the token creation
      */
     @SuppressWarnings("unused")
     public void setSplitChar(char splitChar){
-        this.setSplitChar(new char[]{splitChar});
+        if(splitChar == ' ') this.setSplitChar(new char[]{'§',splitChar});
+        else this.setSplitChar(new char[]{splitChar});
+    }
+
+    /**
+     * Returns true if the character is currently configured as a splitChar
+     *
+     * @param c the char to test
+     * @return boolean
+     */
+    private boolean isSplitChar(char c) {
+        for(char split: splitChar) {
+            if(c == split) return true;
+        }
+        return false;
     }
 
     /**
@@ -641,7 +660,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         super.onFocusChanged(hasFocus, direction, previous);
 
         // See if the user left any unfinished tokens and finish them
-        if(enoughToFilter()) performCompletion();
+        if(!hasFocus && enoughToFilter()) performCompletion();
 
         // Collapse the view to a single line
         if(allowCollapse) performCollapse(hasFocus);
@@ -1126,11 +1145,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     //The end of the span is the character index after it
                     spanEnd--;
 
-                    if (spanEnd >= 0 && text.charAt(spanEnd) == ',') {
+                    if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
                         text.delete(spanEnd, spanEnd + 1);
                     }
 
-                    if (spanStart > 0 && text.charAt(spanStart) == ',') {
+                    if (spanStart > 0 && isSplitChar(text.charAt(spanStart))) {
                         text.delete(spanStart, spanStart + 1);
                     }
                 }

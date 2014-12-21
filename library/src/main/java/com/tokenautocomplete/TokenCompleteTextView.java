@@ -426,7 +426,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         // Hide the keyboard
         InputMethodManager imm = (InputMethodManager)getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+        imm.hideSoftInputFromWindow(getWindowToken(), 0);
     }
 
     @Override
@@ -573,7 +573,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      *
      * @param hasFocus boolean indicating whether we have the focus or not.
      */
-    protected void performCollapse(boolean hasFocus) {
+    public void performCollapse(boolean hasFocus) {
         // Pause the spanwatcher
         focusChanging = true;
         if (!hasFocus) {
@@ -1316,8 +1316,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             addObject(obj);
         }
 
-        //This needs to happen after all the objects get added (which also get posted)
-        //or the view truncates really oddly
+        // Collapse the view if necessary
         if (!isFocused() && allowCollapse) {
             post(new Runnable() {
                 @Override
@@ -1327,8 +1326,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 }
             });
         }
-
-
     }
 
     /**

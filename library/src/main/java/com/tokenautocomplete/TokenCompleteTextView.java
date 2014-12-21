@@ -33,6 +33,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -408,24 +409,24 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
         InputConnection conn = super.onCreateInputConnection(outAttrs);
         outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
-        outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_EXTRACT_UI;
+        outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_EXTRACT_UI;
         return conn;
     }
 
     /**
-     * Create a token and focus the next field when the user sends the DONE IME action
+     * Create a token and hide the keyboard when the user sends the DONE IME action
+     * Use IME_NEXT if you want to create a token and go to the next field
      */
     private void handleDone() {
         // If there is enough text to filter, attempt to complete the token
         if (enoughToFilter()) {
             performCompletion();
-        } else {
-            // Look for the next field and focus it otherwise
-            View next = focusSearch(View.FOCUS_DOWN);
-            if (next != null) {
-                next.requestFocus();
-            }
         }
+
+        // Hide the keyboard
+        InputMethodManager imm = (InputMethodManager)getContext().getSystemService(
+                Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
     }
 
     @Override

@@ -333,7 +333,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         return connection;
     }
 
-    private void handleDone() {
+    protected void handleDone() {
         //If there is enough text to filter, attempt to complete the token
         if (enoughToFilter()) {
             performCompletion();

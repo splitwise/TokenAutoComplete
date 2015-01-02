@@ -76,14 +76,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         }
     }
 
-    private Tokenizer tokenizer;
+    protected Tokenizer tokenizer;
     private Object selectedObject;
     private TokenListener listener;
     private TokenSpanWatcher spanWatcher;
     private ArrayList<Object> objects;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
-    private String prefix = "";
+    protected String prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
     private boolean allowDuplicates = true;
@@ -623,9 +623,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * @param sourceText the text used if this object is deleted
      */
     public void addObject(final Object object, final CharSequence sourceText) {
-        post(new Runnable() {
-            @Override
-            public void run() {
+//        post(new Runnable() {
+//            @Override
+//            public void run() {
                 if (object == null) return;
                 if (!allowDuplicates && objects.contains(object)) return;
 
@@ -653,8 +653,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
                     setSelection(editable.length());
                 }
-            }
-        });
+//            }
+//        });
     }
 
     /**

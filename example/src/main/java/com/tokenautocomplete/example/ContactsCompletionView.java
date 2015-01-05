@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocomplete.example;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,13 +9,15 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.tokenautocomplete.TokenCompleteTextView;
+
 /**
  * Sample token completion view for basic contact info
  *
  * Created on 9/12/13.
  * @author mgod
  */
-public class ContactsCompletionView extends TokenCompleteTextView{
+public class ContactsCompletionView extends TokenCompleteTextView {
 
     public ContactsCompletionView(Context context) {
         super(context);

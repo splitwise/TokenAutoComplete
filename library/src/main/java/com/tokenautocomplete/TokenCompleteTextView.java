@@ -126,6 +126,13 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     final String destString = new String(dest.toString());
                     if (destString.length() > 0
                             && destString.replaceAll(",", "").replaceAll(" ", "").length() > 0) {
+                        final String[] tokens = destString.split(",");
+                        if(tokens.length > 0) {
+                            final String token = tokens[tokens.length - 1];
+                            if(token.replace(" ","").isEmpty()) {
+                                return "";
+                            }
+                        }
                         performCompletion();
                     }
                     return "";

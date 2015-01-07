@@ -4,14 +4,17 @@
     android:layout_height="match_parent"
     tools:context=".TokenActivity">
 
-    <com.tokenautocomplete.example.ContactsCompletionView
+    <com.tokenautocomplete.ContactsCompletionView
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/email_prompt"
+        android:imeOptions="actionDone"
         android:textColor="@android:color/darker_gray"
         android:textSize="19sp"
-        android:nextFocusDown="@+id/editText"/>
+        android:nextFocusDown="@+id/editText"
+        android:inputType="text|textNoSuggestions|textMultiLine"
+        android:focusableInTouchMode="true" />
 
     <TextView
         android:layout_width="match_parent"
@@ -37,13 +40,21 @@
         android:layout_below="@+id/editText"
         android:layout_centerHorizontal="true" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add random token"
+        android:id="@+id/addButton"
+        android:layout_below="@id/removeButton"
+        android:layout_centerHorizontal="true" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:id="@+id/tokens"
-        android:layout_below="@+id/removeButton"
-        android:layout_alignLeft="@+id/lastEvent"
+        android:layout_below="@id/addButton"
+        android:layout_alignLeft="@id/lastEvent"
         android:layout_marginTop="10dp" />
 
 </RelativeLayout>

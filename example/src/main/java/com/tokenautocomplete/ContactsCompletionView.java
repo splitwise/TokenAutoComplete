@@ -1,4 +1,4 @@
-package com.tokenautocomplete.example;
+package com.tokenautocomplete;
 
 import android.app.Activity;
 import android.content.Context;

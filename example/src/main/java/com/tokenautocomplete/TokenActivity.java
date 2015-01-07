@@ -1,4 +1,4 @@
-package com.tokenautocomplete.example;
+package com.tokenautocomplete;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -13,6 +13,7 @@ import com.tokenautocomplete.FilteredArrayAdapter;
 import com.tokenautocomplete.TokenCompleteTextView;
 
 import java.util.List;
+import java.util.Random;
 
 public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener {
     ContactsCompletionView completionView;
@@ -74,6 +75,15 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
                 if (objects.size() > 0) {
                     completionView.removeObject(objects.get(objects.size() - 1));
                 }
+            }
+        });
+
+        Button addButton = (Button)findViewById(R.id.addButton);
+        addButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Random rand = new Random();
+                completionView.addObject(people[rand.nextInt(people.length)]);
             }
         });
     }

@@ -417,7 +417,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     @Override
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
-        InputConnection conn = super.onCreateInputConnection(outAttrs);
+        TokenInputConnection conn = new TokenInputConnection(super.onCreateInputConnection(outAttrs), true);
         outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
         outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_EXTRACT_UI;
         return conn;
@@ -591,7 +591,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 TokenImageSpan[] tokens = text.getSpans(0, lastPosition, TokenImageSpan.class);
                 int count = objects.size() - tokens.length;
 
-                if (count > 0) {
+                // Make sure we don't add more than 1 CountSpan
+                CountSpan[] countSpans = text.getSpans(0, lastPosition, CountSpan.class);
+
+                if (count > 0 && countSpans.length==0) {
                     lastPosition++;
                     CountSpan cs = new CountSpan(count, getContext(), getCurrentTextColor(),
                             (int)getTextSize(), (int)maxTextWidth());
@@ -754,7 +757,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 if (object == null) return;
                 if (!allowDuplicates && objects.contains(object)) return;
                 insertSpan(object, sourceText);
-                if(getText() != null) setSelection(getText().length());
+                if (getText() != null && isFocused()) setSelection(getText().length());
             }
         });
     }
@@ -855,7 +858,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         TokenImageSpan tokenSpan = buildSpanForObject(object);
 
         Editable editable = getText();
-        if (editable != null) {
+        if(editable == null) return;
+
+        // If we're focused, or haven't hidden any objects yet, we can try adding it
+        if (!allowCollapse || isFocused() || hiddenSpans.isEmpty()) {
             int offset = editable.length();
             //There might be a hint visible...
             if (hintVisible) {
@@ -867,11 +873,16 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             }
             editable.setSpan(tokenSpan, offset, offset + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-            //In some cases, particularly the 1 to nth objects when not focused and restoring
-            //onSpanAdded doesn't get called
-            if (!objects.contains(object)) {
-                spanWatcher.onSpanAdded(editable, tokenSpan, offset, offset + ssb.length() - 1);
-            }
+            // If we're not focused: collapse the view if necessary
+            if(!isFocused() && allowCollapse) performCollapse(false);
+        } else {
+            hiddenSpans.add(tokenSpan);
+            updateCountSpan();
+        }
+        //In some cases, particularly the 1 to nth objects when not focused and restoring
+        //onSpanAdded doesn't get called
+        if (!objects.contains(object)) {
+            spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
         }
     }
 
@@ -1135,7 +1146,14 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             if (what instanceof TokenImageSpan && !savingState && !focusChanging) {
                 TokenImageSpan token = (TokenImageSpan)what;
                 objects.add(token.getToken());
-                updateCountSpan(1);
+                /** wdullaer: The behaviour of calling your updateCountSpan(int) here is very similar
+                 * to my updateCountSpan in insertSpan and removeObject. However because I'm handling
+                 * the appearance of the count span differently now: it inspects the state of the hiddenSpans
+                 * so the count is always correct. It also plays nicer when adding objects through addObject
+                 *
+                 * It is up to you to chose how you want it to work though.
+                 */
+                //updateCountSpan(1);
 
                 if (listener != null)
                     listener.onTokenAdded(token.getToken());
@@ -1148,7 +1166,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 TokenImageSpan token = (TokenImageSpan)what;
                 if (objects.contains(token.getToken())) {
                     objects.remove(token.getToken());
-                    updateCountSpan(-1);
+                    //updateCountSpan(-1);
                 }
 
                 if (listener != null)

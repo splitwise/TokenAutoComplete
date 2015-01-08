@@ -402,7 +402,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
 
     @Override
     public void performCompletion() {
-        if (getListSelection() == ListView.INVALID_POSITION) {
+        if (getListSelection() == ListView.INVALID_POSITION && enoughToFilter()) {
             Object bestGuess;
             if (getAdapter().getCount() > 0  && performBestGuess) {
                 bestGuess = getAdapter().getItem(0);
@@ -428,10 +428,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
      * Use IME_NEXT if you want to create a token and go to the next field
      */
     private void handleDone() {
-        // If there is enough text to filter, attempt to complete the token
-        if (enoughToFilter()) {
-            performCompletion();
-        }
+        // Attempt to complete the current token token
+        performCompletion();
 
         // Hide the keyboard
         InputMethodManager imm = (InputMethodManager)getContext().getSystemService(
@@ -671,7 +669,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         super.onFocusChanged(hasFocus, direction, previous);
 
         // See if the user left any unfinished tokens and finish them
-        if(!hasFocus && enoughToFilter()) performCompletion();
+        if(!hasFocus) performCompletion();
 
         // Collapse the view to a single line
         if(allowCollapse) performCollapse(hasFocus);

@@ -1,9 +1,9 @@
 TokenAutoComplete
 =================
 
-TokenAutoComplete is a Android Gmail style token  auto-complete text field and filter. It's designed to have an extremely simple API to make it easy for anyone to implement this functionality while still exposing enough customization to let you make it awesome.
+TokenAutoComplete is an Android Gmail style token  auto-complete text field and filter. It's designed to have an extremely simple API to make it easy for anyone to implement this functionality while still exposing enough customization to let you make it awesome.
 
-Support for Android 2.2 and up. Will probably work back to Android 2.0, but I haven't tested it.
+Support for Android 4.0.3 (API 15) and up. If you need support for earlier versions of Android, [version 1.2.1](https://github.com/splitwise/TokenAutoComplete/releases/tag/v1.2.1) is the most recent version that supports Android 2.2 (API 8) and up.
 
 ![Focused TokenAutoCompleteTextView example](https://raw.github.com/splitwise/TokenAutoComplete/gh-pages/images/focused.png)
 

@@ -9,8 +9,6 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.tokenautocomplete.TokenCompleteTextView;
-
 /**
  * Sample token completion view for basic contact info
  *

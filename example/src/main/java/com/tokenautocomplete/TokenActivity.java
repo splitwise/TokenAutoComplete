@@ -9,9 +9,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.tokenautocomplete.FilteredArrayAdapter;
-import com.tokenautocomplete.TokenCompleteTextView;
-
 import java.util.List;
 import java.util.Random;
 
@@ -40,7 +37,7 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
                 if (convertView == null) {
 
                     LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-                    convertView = (View)l.inflate(R.layout.person_layout, parent, false);
+                    convertView = l.inflate(R.layout.person_layout, parent, false);
                 }
 
                 Person p = getItem(position);

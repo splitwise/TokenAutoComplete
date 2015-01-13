@@ -12,7 +12,24 @@ Support for Android 4.0.3 (API 15) and up. If you need support for earlier versi
 Setup
 =====
 
-* [Download the jar file](https://github.com/splitwise/TokenAutoComplete/releases) and add it to your project
+### Gradle
+```
+dependencies {
+    compile "com.splitwise:tokenautocomplete:1.3.0@aar"
+}
+```
+### Maven
+```
+<dependency>
+  <groupId>com.splitwise</groupId>
+  <artifactId>tokenautocomplete</artifactId>
+  <version>1.3.0</version>
+  <type>aar</type>
+</dependency>
+```
+### No build tools
+
+[Download the jar file](https://github.com/splitwise/TokenAutoComplete/releases) and add it to your project
 
 If you would like to get the most recent code in a jar, clone the project and run ```./gradlew jar``` from the root folder. This will build a tokenautocomplete.jar in ```library/build/libs/```.
 

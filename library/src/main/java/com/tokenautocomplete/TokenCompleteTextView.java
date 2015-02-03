@@ -397,7 +397,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             start = prefix.length();
         }
 
-        return end - start >= getThreshold();
+        //Don't allow 0 length entries to filter
+        return end - start >= Math.max(getThreshold(), 1);
     }
 
     @Override

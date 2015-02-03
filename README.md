@@ -15,7 +15,7 @@ Setup
 ### Gradle
 ```
 dependencies {
-    compile "com.splitwise:tokenautocomplete:1.3.0@aar"
+    compile "com.splitwise:tokenautocomplete:1.3.1@aar"
 }
 ```
 ### Maven
@@ -23,7 +23,7 @@ dependencies {
 <dependency>
   <groupId>com.splitwise</groupId>
   <artifactId>tokenautocomplete</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.1</version>
   <type>aar</type>
 </dependency>
 ```

@@ -513,6 +513,9 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 if (links.length > 0) {
                     links[0].onClick();
                     handled = true;
+                } else {
+                    //We didn't click on a token, so if any are selected, we should clear that
+                    clearSelections();
                 }
             }
         }
@@ -554,7 +557,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                     if (selStart <= spanEnd && text.getSpanStart(span) < selStart) {
                         if(spanEnd==text.length())
                             setSelection(spanEnd);
-                                else
+                        else
                             setSelection(spanEnd+1);
                         return;
                     }

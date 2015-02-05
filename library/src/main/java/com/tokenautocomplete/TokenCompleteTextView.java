@@ -3,8 +3,6 @@ package com.tokenautocomplete;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -17,20 +15,15 @@ import android.text.InputType;
 import android.text.Layout;
 import android.text.SpanWatcher;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
-import android.text.style.ReplacementSpan;
-import android.text.style.TextAppearanceSpan;
 import android.util.AttributeSet;
-import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
@@ -41,7 +34,6 @@ import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
 import java.io.Serializable;
-import java.lang.Character;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -724,7 +716,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             return null;
         }
         View tokenView = getViewForObject(obj);
-        return new TokenImageSpan(tokenView, obj);
+        return new TokenImageSpan(tokenView, obj, (int)maxTextWidth());
     }
 
     @Override
@@ -1016,85 +1008,11 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         invalidate();
     }
 
-    public static class HintSpan extends TextAppearanceSpan {
-        public HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
-            super(family, style, size, color, linkColor);
-        }
-    }
-
-    private class ViewSpan extends ReplacementSpan {
-        protected View view;
-
-        public ViewSpan(View v) {
-            super();
-            view = v;
-            view.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        }
-
-        private void prepView() {
-            int widthSpec = MeasureSpec.makeMeasureSpec((int)maxTextWidth(), MeasureSpec.AT_MOST);
-            int heightSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
-
-            view.measure(widthSpec, heightSpec);
-            view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-        }
-
-        public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
-            prepView();
-
-            canvas.save();
-            //Centering the token looks like a better strategy that aligning the bottom
-            int padding = (bottom - top - view.getBottom()) / 2;
-            canvas.translate(x, bottom - view.getBottom() - padding);
-            view.draw(canvas);
-            canvas.restore();
-        }
-
-        public int getSize(Paint paint, CharSequence charSequence, int i, int i2, Paint.FontMetricsInt fm) {
-            prepView();
-
-            if (fm != null) {
-                //We need to make sure the layout allots enough space for the view
-                int height = view.getMeasuredHeight();
-                int need = height - (fm.descent - fm.ascent);
-                if (need > 0) {
-                    int ascent = need / 2;
-                    //This makes sure the text drawing area will be tall enough for the view
-                    fm.descent += need - ascent;
-                    fm.ascent -= ascent;
-                    fm.bottom += need - ascent;
-                    fm.top -= need / 2;
-                }
-            }
-
-            return view.getRight();
-        }
-    }
-
-    private class CountSpan extends ViewSpan {
-        public String text = "";
-        private int count;
-
-        public CountSpan(int count, Context ctx, int textColor, int textSize,@SuppressWarnings("unused") int maxWidth) {
-            super(new TextView(ctx));
-            TextView v = (TextView)view;
-            v.setTextColor(textColor);
-            v.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
-            setCount(count);
-        }
-
-        public void setCount(int c) {
-            count = c;
-            text = "+" + count;
-            ((TextView)view).setText(text);
-        }
-    }
-
-    protected class TokenImageSpan extends ViewSpan {
+    private class TokenImageSpan extends ViewSpan {
         private Object token;
 
-        public TokenImageSpan(View d, Object token) {
-            super(d);
+        public TokenImageSpan(View d, Object token, int maxWidth) {
+            super(d, maxWidth);
             this.token = token;
         }
 
@@ -1367,81 +1285,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
                 return new SavedState[size];
             }
         };
-    }
-
-    private class CharacterTokenizer implements Tokenizer{
-        ArrayList<Character> splitChar;
-
-        @SuppressWarnings("unused")
-        CharacterTokenizer(){
-            super();
-            this.splitChar = new ArrayList<>(1);
-            this.splitChar.add(',');
-        }
-
-        CharacterTokenizer(char[] splitChar){
-            super();
-            this.splitChar = new ArrayList<>(splitChar.length);
-            for(char c : splitChar) this.splitChar.add(c);
-        }
-
-        @SuppressWarnings("unused")
-        CharacterTokenizer(char splitChar){
-            super();
-            this.splitChar = new ArrayList<>(1);
-            this.splitChar.add(splitChar);
-        }
-
-        public int findTokenStart(CharSequence text, int cursor) {
-            int i = cursor;
-
-            while (i > 0 && !splitChar.contains(text.charAt(i - 1))) {
-                i--;
-            }
-            while (i < cursor && text.charAt(i) == ' ') {
-                i++;
-            }
-
-            return i;
-        }
-
-        public int findTokenEnd(CharSequence text, int cursor) {
-            int i = cursor;
-            int len = text.length();
-
-            while (i < len) {
-                if (splitChar.contains(text.charAt(i))) {
-                    return i;
-                } else {
-                    i++;
-                }
-            }
-
-            return len;
-        }
-
-        public CharSequence terminateToken(CharSequence text) {
-            int i = text.length();
-
-            while (i > 0 && text.charAt(i - 1) == ' ') {
-                i--;
-            }
-
-            if (i > 0 && splitChar.contains(text.charAt(i - 1))) {
-                return text;
-            } else {
-                // Try not to use a space as a token character
-                String token = (splitChar.size()>1 && splitChar.get(0)==' ' ? splitChar.get(1) : splitChar.get(0))+" ";
-                if (text instanceof Spanned) {
-                    SpannableString sp = new SpannableString(text + token);
-                    TextUtils.copySpansFrom((Spanned) text, 0, text.length(),
-                            Object.class, sp, 0);
-                    return sp;
-                } else {
-                    return text + token;
-                }
-            }
-        }
     }
 
     private class TokenInputConnection extends InputConnectionWrapper {

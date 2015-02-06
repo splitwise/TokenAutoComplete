@@ -99,6 +99,8 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
+    
+    private int tokenLimit = -1;
 
     /**
      * Make sure the TextChangedListeners are set
@@ -145,8 +147,10 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         setFilters(new InputFilter[] {new InputFilter() {
             @Override
             public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
-                //Detect split characters, remove them and complete the current token instead
-                if(source.length() == 1){
+                // Token limit check
+                if (tokenLimit != -1 && objects.size() == tokenLimit) {
+                    return "";
+                } else if(source.length() == 1) {//Detect split characters, remove them and complete the current token instead
                     boolean isSplitChar = false;
                     for(char c : splitChar) isSplitChar = source.charAt(0) == c || isSplitChar;
                     if (isSplitChar) {
@@ -329,6 +333,15 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
     public void allowCollapse(boolean allowCollapse) {
         this.allowCollapse = allowCollapse;
     }
+    
+    /**
+     * Set a number of tokens limit.
+     * @param tokenLimit The number of tokens permitted. -1 value disables limit.
+     */
+    public void setTokenLimit(int tokenLimit){
+        this.tokenLimit = tokenLimit;
+    }
+    
     /**
      * A token view for the object
      *

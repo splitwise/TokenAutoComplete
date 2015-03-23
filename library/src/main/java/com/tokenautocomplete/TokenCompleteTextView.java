@@ -1018,7 +1018,7 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
         invalidate();
     }
 
-    private class TokenImageSpan extends ViewSpan {
+    protected class TokenImageSpan extends ViewSpan {
         private Object token;
 
         public TokenImageSpan(View d, Object token, int maxWidth) {

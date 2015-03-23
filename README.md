@@ -407,6 +407,24 @@ performBestGuess(false);
 ```java
 allowCollapse(true);
 ```
+* Change the set of characters that complete a token
+```java
+setSplitChar(' ');
+```
+OR
+```java
+char[] splitChar = {',', ';', ' '};
+setSplitChar(splitChar);
+```
+* Change the number of characters required to start showing sugegstions
+```java
+setThreshold(1);
+```
+* Limit the total number of tokens in the field
+```java
+setTokenLimit(10);
+```
+
 
 License
 =======

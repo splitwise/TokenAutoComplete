@@ -411,12 +411,12 @@ allowCollapse(true);
 ```java
 setSplitChar(' ');
 ```
-OR
+        OR
 ```java
 char[] splitChar = {',', ';', ' '};
 setSplitChar(splitChar);
 ```
-* Change the number of characters required to start showing sugegstions
+* Change the number of characters required to start showing suggestions
 ```java
 setThreshold(1);
 ```

@@ -411,7 +411,7 @@ allowCollapse(true);
 ```java
 setSplitChar(' ');
 ```
-        OR
+OR
 ```java
 char[] splitChar = {',', ';', ' '};
 setSplitChar(splitChar);

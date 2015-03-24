@@ -1314,9 +1314,6 @@ public abstract class TokenCompleteTextView extends MultiAutoCompleteTextView im
             if (getSelectionStart() <= prefix.length())
                 beforeLength = 0;
 
-            if(beforeLength > afterLength) {
-                return deleteSelectedObject(false);
-            }
             return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
         }
     }

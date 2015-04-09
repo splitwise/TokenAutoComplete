@@ -629,8 +629,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                     // Remove all spans behind the count span and hold them in the hiddenSpans List
-                    hiddenSpans = new ArrayList<>(Arrays.asList(text.getSpans(lastPosition+cs.text.length(), text.length(), TokenImageSpan.class)));
+                    // We have to put the newlyHiddenSpans in a separate variable first to coerce to the proper generic type
+                    TokenImageSpan[] newlyHiddenSpans = text.getSpans(lastPosition + cs.text.length(), text.length(), TokenImageSpan.class);
+                    hiddenSpans = Arrays.asList(newlyHiddenSpans);
                     for(TokenImageSpan span : hiddenSpans) {
+                        hiddenSpans.add(span);
                         removeSpan(span);
                     }
                 }
@@ -879,7 +882,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param object Object to create a span for
      * @param sourceText CharSequence to show when the span is removed
      */
-    private void insertSpan(Object object, CharSequence sourceText) {
+    private void insertSpan(T object, CharSequence sourceText) {
         SpannableStringBuilder ssb = buildSpannableForText(sourceText);
         TokenImageSpan tokenSpan = buildSpanForObject(object);
 
@@ -916,7 +919,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     }
 
-    private void insertSpan(Object object) {
+    private void insertSpan(T object) {
         insertSpan(object, object.toString());
     }
 
@@ -1072,8 +1075,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private class TokenSpanWatcher implements SpanWatcher {
 
         @Override
-        public void onSpanAdded(Spannable text, T what, int start, int end) {
-            if (what instanceof TokenImageSpan && !savingState && !focusChanging) {
+        public void onSpanAdded(Spannable text, Object what, int start, int end) {
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
                 TokenImageSpan token = (TokenImageSpan)what;
                 objects.add(token.getToken());
 
@@ -1085,7 +1088,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenImageSpan && !savingState  && !focusChanging) {
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState  && !focusChanging) {
                 TokenImageSpan token = (TokenImageSpan)what;
                 if (objects.contains(token.getToken())) {
                     objects.remove(token.getToken());

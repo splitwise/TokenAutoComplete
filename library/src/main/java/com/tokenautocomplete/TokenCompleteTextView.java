@@ -80,7 +80,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private TokenListener listener;
     private TokenSpanWatcher spanWatcher;
     private ArrayList<T> objects;
-    private List<TokenImageSpan> hiddenSpans;
+    private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private String prefix = "";
@@ -629,11 +629,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                     // Remove all spans behind the count span and hold them in the hiddenSpans List
-                    // We have to put the newlyHiddenSpans in a separate variable first to coerce to the proper generic type
-                    TokenImageSpan[] newlyHiddenSpans = text.getSpans(lastPosition + cs.text.length(), text.length(), TokenImageSpan.class);
-                    hiddenSpans = Arrays.asList(newlyHiddenSpans);
+                    // The generic type information is not captured in TokenImageSpan.class so we have
+                    // to perform a cast for the returned spans to coerce them to the proper generic type.
+                    hiddenSpans = new ArrayList<>(Arrays.asList(
+                            (TokenImageSpan[])text.getSpans(lastPosition + cs.text.length(), text.length(), TokenImageSpan.class)));
                     for(TokenImageSpan span : hiddenSpans) {
-                        hiddenSpans.add(span);
                         removeSpan(span);
                     }
                 }

@@ -21,6 +21,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -49,6 +50,9 @@ import java.util.List;
  * @author mgod
  */
 public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
+    //Logging
+    public static final String TAG = "TokenAutoComplete";
+
     //When the token is deleted...
     public enum TokenDeleteStyle {
         _Parent, //...do the parent behavior, not recommended
@@ -761,6 +765,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         try {
             return super.extractText(request, outText);
         } catch (IndexOutOfBoundsException ignored) {
+            Log.d(TAG, "extractText hit IndexOutOfBoundsException. This may be normal.", ignored);
             return false;
         }
     }
@@ -1161,12 +1166,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             if (obj instanceof Serializable) {
                 serializables.add((Serializable)obj);
             } else {
-                System.out.println("Unable to save '" + obj + "'");
+                Log.e(TAG, "Unable to save '" + obj + "'");
             }
         }
         if (serializables.size() != objects.size()) {
-            System.out.println("You should make your objects Serializable or override");
-            System.out.println("getSerializableObjects and convertSerializableArrayToObjectArray");
+            String message = "You should make your objects Serializable or override\n" +
+                    "getSerializableObjects and convertSerializableArrayToObjectArray";
+            Log.e(TAG, message);
         }
 
         return serializables;
@@ -1311,9 +1317,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // The onKeyPressed method does not always do this.
         @Override
         public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-            System.out.println("before: " + beforeLength + " after: " + afterLength);
-            System.out.println("selection: " + getSelectionStart() + " end: " +getSelectionEnd());
-
             //Shouldn't be able to delete prefix, so don't do anything
             if (getSelectionStart() <= prefix.length())
                 beforeLength = 0;

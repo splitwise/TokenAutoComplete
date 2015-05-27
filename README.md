@@ -127,7 +127,7 @@ public class Person implements Serializable {
 }
 ```
 
-Note that the class implements ```Serializable```. In order to restore the view state properly, the ```TokenCompleteTextView``` needs to be able to save and restore your objects from disk. If your objects cannot be made ```Serializable```, please look at [restoring the view state].
+Note that the class implements ```Serializable```. In order to restore the view state properly, the ```TokenCompleteTextView``` needs to be able to save and restore your objects from disk. If your objects cannot be made ```Serializable```, please look at [restoring the view state](#restoring-the-view-state).
 
 ### Create a layout and activity for your completion view
 

@@ -1133,7 +1133,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             clearSelections();
             updateHint();
 
-            TokenImageSpan[] spans = text.getSpans(start - before, start - before + count, TokenImageSpan.class);
+            TokenImageSpan[] spans = text.getSpans(start - before, start + Math.max(before, count), TokenImageSpan.class);
 
             for (TokenImageSpan token: spans) {
 

@@ -705,7 +705,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             case PartialCompletion:
                 return currentCompletionText();
             case ToString:
-                return object.toString();
+                return object != null ? object.toString() : "";
             case _Parent:
             default:
                 return super.convertSelectionToString(object);
@@ -734,7 +734,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         clearComposingText();
 
         // Don't build a token for an empty String
-        if(selectedObject.toString().equals("")) return;
+        if(selectedObject == null || selectedObject.toString().equals("")) return;
 
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
@@ -782,6 +782,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             public void run() {
                 if (object == null) return;
                 if (!allowDuplicates && objects.contains(object)) return;
+                if (tokenLimit != -1 && objects.size() == tokenLimit) return;
                 insertSpan(object, sourceText);
                 if (getText() != null && isFocused()) setSelection(getText().length());
             }

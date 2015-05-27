@@ -100,7 +100,6 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
     public void onTokenAdded(Object token) {
         ((TextView)findViewById(R.id.lastEvent)).setText("Added: " + token);
         updateTokenConfirmation();
-        System.out.println();
     }
 
     @Override

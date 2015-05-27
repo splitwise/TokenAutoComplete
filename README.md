@@ -323,9 +323,9 @@ token_selected.xml
 </shape>
 ```
 
-If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view and override ```setSelected```. You can then make appropriate changes to the view:
+If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view to use in the layout you inflate in ```getViewForObject``` and override ```setSelected``` in that view. You can then make appropriate changes to the view:
 
-In some custom view implementation:
+In some custom view implementation (see ```com.tokenautocomplete.TokenView```):
 ```java
 @Override
 public void setSelected(boolean selected) {

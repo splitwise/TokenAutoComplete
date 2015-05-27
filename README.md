@@ -305,7 +305,8 @@ token_default.xml
         android:topRightRadius="3dp"
         android:bottomRightRadius="3dp"/>
 
-</shape>```
+</shape>
+```
 
 token_selected.xml
 ```xml

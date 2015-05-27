@@ -904,7 +904,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 offset = prefix.length();
                 editable.insert(offset, ssb);
             } else {
-                editable.append(ssb);
+                String completionText = currentCompletionText();
+                if ( completionText  != null && completionText.length() > 0 ) {
+                    // The user has entered some text that has not yet been tokenized.
+                    // Find the beginning of this text and insert the new token there.
+                    offset = TextUtils.indexOf(editable, completionText);
+                }
+                editable.insert(offset, ssb);
             }
             editable.setSpan(tokenSpan, offset, offset + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 

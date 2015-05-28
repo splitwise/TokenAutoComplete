@@ -336,6 +336,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * Set a number of tokens limit.
      * @param tokenLimit The number of tokens permitted. -1 value disables limit.
      */
+    @SuppressWarnings("unused")
     public void setTokenLimit(int tokenLimit){
         this.tokenLimit = tokenLimit;
     }
@@ -761,7 +762,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     @Override
-    public boolean extractText(ExtractedTextRequest request, ExtractedText outText) {
+    public boolean extractText(@NonNull ExtractedTextRequest request, @NonNull ExtractedText outText) {
         try {
             return super.extractText(request, outText);
         } catch (IndexOutOfBoundsException ignored) {
@@ -1086,6 +1087,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     private class TokenSpanWatcher implements SpanWatcher {
 
+        @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
             if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {

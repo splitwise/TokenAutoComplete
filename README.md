@@ -1,3 +1,7 @@
+### Upgrading from 1.* to 2.0
+
+There is one breaking change from 1.* to 2.0. You need to extend ```TokenCompleteTextView<Object>``` instead of ```TokenCompleteTextView```.
+
 TokenAutoComplete
 =================
 
@@ -50,24 +54,23 @@ For a basic token auto complete view, you'll need to
 You'll need to provide your own implementations for getViewForObject and defaultObject. You should return a view that displays the token from getViewForObject. In defaultObject, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
 
 ```java
-public class ContactsCompletionView extends TokenCompleteTextView {
+public class ContactsCompletionView extends TokenCompleteTextView<Person> {
     public ContactsCompletionView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
     @Override
-    protected View getViewForObject(Object object) {
-        Person p = (Person)object;
+    protected View getViewForObject(Person person) {
 
         LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
         LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
-        ((TextView)view.findViewById(R.id.name)).setText(p.getEmail());
+        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
 
         return view;
     }
 
     @Override
-    protected Object defaultObject(String completionText) {
+    protected Person defaultObject(String completionText) {
         //Stupid simple example of guessing if we have an email or not
         int index = completionText.indexOf('@');
         if (index == -1) {

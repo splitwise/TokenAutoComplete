@@ -323,22 +323,90 @@ token_selected.xml
 </shape>
 ```
 
-If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view and override ```setSelected```. You can then make appropriate changes to the view:
+If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view and override ```setSelected```. 
 
-In some custom view implementation:
+You can then make appropriate changes to the view. You will need to implement your own `View`
+which you use in your `TokenCompleteTextView` extension.
+
+## Example
+
+
+### Custom View ###
+
+```xml
+<!-- res/layout/token_cell.xml -->
+<com.foo.views.AutoCompleteToken xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content">
+
+    <TextView android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/autocomplete_token_background"
+        android:padding="5dp"
+        android:textColor="#000000"
+        android:textSize="18sp" />
+
+</com.foo.views.AutoCompleteToken>
+```
+
+### And its corresponding implementation ###
+
 ```java
-@Override
-public void setSelected(boolean selected) {
-    super.setSelected(selected);
 
-    ImageView v = (ImageView)findViewById(R.id.icon);
-    if (selected) {
-        v.setImageDrawable(getResources().getDrawable(R.raw.close_x));
-    } else {
-        v.setImageDrawable(getResources().getDrawable(R.raw.user_icon));
+package com.foo.views;
+
+public class AutoCompleteToken extends LinearLayout {
+
+    public AutoCompleteToken(Context context) {
+        super(context);
+    }
+
+    public AutoCompleteToken(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public AutoCompleteToken(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+    }
+
+    @Override
+    public void setSelected(boolean selected) {
+        super.setSelected(selected);
+        Log.i("token", "Selected!");
     }
 }
 ```
+
+### The TokenCompleteTextView extension ###
+
+Inflate your custom view:
+
+
+```java
+public class AutoCompletePersonSearchView extends TokenCompleteTextView {
+
+    public AutoCompletePersonSearchView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    @Override
+    protected View getViewForObject(Object object) {
+        ServerUser user = (ServerUser)object;
+
+        LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        AutoCompleteToken view = (AutoCompleteToken)l.inflate(R.layout.token_cell, (ViewGroup) AutoCompletePersonSearchView.this.getParent(), false);
+        ((TextView)view.findViewById(R.id.name)).setText(user.userName);
+        return view;
+    }
+
+    @Override
+    protected Object defaultObject(String completionText) {
+        return completionText;
+    }
+}
+```
+
 
 Custom completion delete behavior
 =================================

@@ -327,19 +327,66 @@ token_selected.xml
 </shape>
 ```
 
-If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view to use in the layout you inflate in ```getViewForObject``` and override ```setSelected``` in that view. You can then make appropriate changes to the view:
+If you need more detailed view customization like changing a picture in the token or resizing the token, you will need to provide a custom view to use in the layout you inflate in ```getViewForObject``` and override ```setSelected``` in that view. You can then make appropriate changes to the view.
 
-In some custom view implementation (see ```com.tokenautocomplete.TokenView```):
+### Example custom view
+
+In a view implementation (see ```com.tokenautocomplete.TokenLayout```):
 ```java
-@Override
-public void setSelected(boolean selected) {
-    super.setSelected(selected);
+public class TokenLayout extends LinearLayout {
 
-    ImageView v = (ImageView)findViewById(R.id.icon);
-    if (selected) {
-        v.setImageDrawable(getResources().getDrawable(R.raw.close_x));
-    } else {
-        v.setImageDrawable(getResources().getDrawable(R.raw.user_icon));
+    ...
+
+    @Override
+    public void setSelected(boolean selected) {
+        super.setSelected(selected);
+
+        TextView v = (TextView)findViewById(R.id.name);
+        if (selected) {
+            v.setCompoundDrawablesWithIntrinsicBounds(0,0,R.drawable.close_x, 0);
+        } else {
+            v.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);
+        }
+    }
+}
+```
+
+contact_token.xml
+```xml
+<com.tokenautocomplete.TokenLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="wrap_content"
+    android:layout_width="wrap_content"
+    android:orientation="horizontal">
+
+    <TextView android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/token_background"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:paddingLeft="3dp"
+        android:paddingRight="3dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="4dp" />
+</com.tokenautocomplete.TokenLayout>
+```
+
+Inflate your custom view:
+
+```java
+public class ContactsCompletionView extends TokenCompleteTextView<Person> {
+
+    ...
+
+    @Override
+    protected View getViewForObject(Person person) {
+
+        LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
+        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
+
+        return view;
     }
 }
 ```

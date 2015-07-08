@@ -370,7 +370,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return TextUtils.substring(editable, start, end);
     }
 
-    private float maxTextWidth() {
+    protected float maxTextWidth() {
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
@@ -1080,9 +1080,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
-    public static interface TokenListener<T> {
-        public void onTokenAdded(T token);
-        public void onTokenRemoved(T token);
+    public interface TokenListener<T> {
+        void onTokenAdded(T token);
+        void onTokenRemoved(T token);
     }
 
     private class TokenSpanWatcher implements SpanWatcher {
@@ -1144,26 +1144,32 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
             TokenImageSpan[] spans = text.getSpans(start - before, start + Math.max(before, count), TokenImageSpan.class);
 
+            //Collect the spans to remove first, otherwise modifications while
+            //removing spans might cause extra spans to get removed on Lollipop+
+            ArrayList<TokenImageSpan>spansToRemove = new ArrayList<>();
             for (TokenImageSpan token: spans) {
-
                 int position = start + count;
                 if (text.getSpanStart(token) < position && position <= text.getSpanEnd(token)) {
-                    //We may have to manually reverse the auto-complete and remove the extra ,'s
-                    int spanStart = text.getSpanStart(token);
-                    int spanEnd = text.getSpanEnd(token);
+                    spansToRemove.add(token);
+                }
+            }
 
-                    removeToken(token, text);
+            for (TokenImageSpan token: spansToRemove) {
+                //We may have to manually reverse the auto-complete and remove the extra ,'s
+                int spanStart = text.getSpanStart(token);
+                int spanEnd = text.getSpanEnd(token);
 
-                    //The end of the span is the character index after it
-                    spanEnd--;
+                removeToken(token, text);
 
-                    if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
-                        text.delete(spanEnd, spanEnd + 1);
-                    }
+                //The end of the span is the character index after it
+                spanEnd--;
 
-                    if (spanStart >= 0 && isSplitChar(text.charAt(spanStart))) {
-                        text.delete(spanStart, spanStart + 1);
-                    }
+                if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
+                    text.delete(spanEnd, spanEnd + 1);
+                }
+
+                if (spanStart >= 0 && isSplitChar(text.charAt(spanStart))) {
+                    text.delete(spanStart, spanStart + 1);
                 }
             }
         }

@@ -3,6 +3,7 @@ package com.tokenautocomplete;
 import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,14 +20,17 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     public ContactsCompletionView(Context context) {
         super(context);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public ContactsCompletionView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public ContactsCompletionView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     @Override

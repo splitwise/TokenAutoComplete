@@ -19,17 +19,14 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     public ContactsCompletionView(Context context) {
         super(context);
-        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public ContactsCompletionView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     public ContactsCompletionView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        setTokenClickStyle(TokenClickStyle.Select);
     }
 
     @Override

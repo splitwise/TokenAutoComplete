@@ -57,6 +57,8 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         completionView = (ContactsCompletionView)findViewById(R.id.searchView);
         completionView.setAdapter(adapter);
         completionView.setTokenListener(this);
+        completionView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
+
 
         if (savedInstanceState == null) {
             completionView.setPrefix("To: ");

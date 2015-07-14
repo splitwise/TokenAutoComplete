@@ -83,6 +83,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private T selectedObject;
     private TokenListener listener;
     private TokenSpanWatcher spanWatcher;
+    private TokenTextWatcher textWatcher;
     private ArrayList<T> objects;
     private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
@@ -101,22 +102,33 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private int tokenLimit = -1;
 
     /**
-     * Make sure the TextChangedListeners are set
+     * Add the TextChangedListeners
      */
-    @TargetApi(14)
-    private void resetListeners() {
-        //reset listeners that get discarded when you set text
+    protected void addListeners() {
         Editable text = getText();
         if (text != null) {
             text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-            addTextChangedListener(new TokenTextWatcher());
+            addTextChangedListener(textWatcher);
+        }
+    }
+
+    /**
+     * Remove the TextChangedListeners
+     */
+    protected void removeListeners() {
+        Editable text = getText();
+        if (text != null) {
+            TokenSpanWatcher[] spanWatchers = text.getSpans(0, text.length(), TokenSpanWatcher.class);
+            for (TokenSpanWatcher watcher: spanWatchers) {
+                text.removeSpan(watcher);
+            }
+            removeTextChangedListener(textWatcher);
         }
     }
 
     /**
      * Initialise the variables and various listeners
      */
-    @TargetApi(11)
     private void init() {
         if(initialized) return;
 
@@ -126,10 +138,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         Editable text = getText();
         assert null != text;
         spanWatcher = new TokenSpanWatcher();
+        textWatcher = new TokenTextWatcher();
         hiddenSpans = new ArrayList<>();
 
         // Initialise TextChangedListeners
-        resetListeners();
+        addListeners();
 
         setTextIsSelectable(false);
         setLongClickable(false);
@@ -149,9 +162,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 if (tokenLimit != -1 && objects.size() == tokenLimit) {
                     return "";
                 } else if(source.length() == 1) {//Detect split characters, remove them and complete the current token instead
-                    boolean isSplitChar = false;
-                    for(char c : splitChar) isSplitChar = source.charAt(0) == c || isSplitChar;
-                    if (isSplitChar) {
+                    if (isSplitChar(source.charAt(0))) {
                         performCompletion();
                         return "";
                     }
@@ -717,8 +728,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private SpannableStringBuilder buildSpannableForText(CharSequence text) {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
-        //Let's try not to use a space as the sentinel character
-        char sentinel = splitChar.length>1 && splitChar[0]==' ' ? splitChar[1] : splitChar[0];
+        //We don't want a space as the sentinel, and splitChar[0] is guaranteed to be something non-space
+        char sentinel = splitChar[0];
         return new SpannableStringBuilder(String.valueOf(sentinel) + tokenizer.terminateToken(text));
     }
 
@@ -1122,40 +1133,41 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * without this, you get the auto-complete dropdown a character early
      */
     private class TokenTextWatcher implements TextWatcher {
+        ArrayList<TokenImageSpan>spansToRemove = new ArrayList<>();
 
         protected void removeToken(TokenImageSpan token, Editable text) {
             text.removeSpan(token);
         }
 
         @Override
-        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // count > 0 means something will be deleted
+            if (count > 0 && getText() != null) {
+                Editable text = getText();
+                int end = start + count;
 
-        @Override
-        public void afterTextChanged(Editable s) {}
+                //If we're deleting a space, we want spans from 1 character before this start
+                if (text.charAt(start) == ' ') {
+                    start -= 1;
+                }
 
-        @Override
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            Editable text = getText();
-            if (text == null)
-                return;
+                TokenImageSpan[] spans = text.getSpans(start, end, TokenImageSpan.class);
 
-            clearSelections();
-            updateHint();
-
-            TokenImageSpan[] spans = text.getSpans(start - before, start + Math.max(before, count), TokenImageSpan.class);
-
-            //Collect the spans to remove first, otherwise modifications while
-            //removing spans might cause extra spans to get removed on Lollipop+
-            ArrayList<TokenImageSpan>spansToRemove = new ArrayList<>();
-            for (TokenImageSpan token: spans) {
-                int position = start + count;
-                if (text.getSpanStart(token) < position && position <= text.getSpanEnd(token)) {
-                    spansToRemove.add(token);
+                //NOTE: I'm not completely sure this won't cause problems if we get stuck in a text changed loop
+                //but it appears to work fine. Spans will stop getting removed if this breaks.
+                spansToRemove = new ArrayList<>();
+                for (TokenImageSpan token: spans) {
+                    if (text.getSpanStart(token) < end && start < text.getSpanEnd(token)) {
+                        spansToRemove.add(token);
+                    }
                 }
             }
+        }
 
-            for (TokenImageSpan token: spansToRemove) {
-                //We may have to manually reverse the auto-complete and remove the extra ,'s
+        @Override
+        public void afterTextChanged(Editable text) {
+            ArrayList<TokenImageSpan>spansCopy = new ArrayList<>(spansToRemove);
+            for (TokenImageSpan token: spansCopy) {
                 int spanStart = text.getSpanStart(token);
                 int spanEnd = text.getSpanEnd(token);
 
@@ -1164,6 +1176,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 //The end of the span is the character index after it
                 spanEnd--;
 
+                //Delete any extra split chars
                 if (spanEnd >= 0 && isSplitChar(text.charAt(spanEnd))) {
                     text.delete(spanEnd, spanEnd + 1);
                 }
@@ -1172,7 +1185,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     text.delete(spanStart, spanStart + 1);
                 }
             }
+
+            clearSelections();
+            updateHint();
         }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {}
     }
 
     protected ArrayList<Serializable> getSerializableObjects() {
@@ -1201,6 +1220,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     @Override
     public Parcelable onSaveInstanceState() {
         ArrayList<Serializable> baseObjects = getSerializableObjects();
+
+        removeListeners();
 
         //ARGH! Apparently, saving the parent state on 2.3 mutates the spannable
         //prevent this mutation from triggering add or removes of token objects ~mgod
@@ -1241,7 +1262,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         deletionStyle = ss.tokenDeleteStyle;
         splitChar = ss.splitChar;
 
-        resetListeners();
+        addListeners();
         for (T obj: convertSerializableArrayToObjectArray(ss.baseObjects)) {
             addObject(obj);
         }

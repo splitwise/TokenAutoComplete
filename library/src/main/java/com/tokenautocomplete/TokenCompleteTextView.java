@@ -29,8 +29,8 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputConnectionWrapper;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
@@ -81,7 +81,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private char[] splitChar = {',', ';'};
     private Tokenizer tokenizer;
     private T selectedObject;
-    private TokenListener listener;
+    private TokenListener<T> listener;
     private TokenSpanWatcher spanWatcher;
     private TokenTextWatcher textWatcher;
     private ArrayList<T> objects;
@@ -98,7 +98,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
-    
+
     private int tokenLimit = -1;
 
     /**
@@ -240,8 +240,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      *
      * @param l The TokenListener
      */
-    public void setTokenListener(TokenListener l) {
+    public void setTokenListener(TokenListener<T> l) {
         listener = l;
+    }
+
+    public boolean isTokenRemovable(T token) {
+        return true;
     }
 
     /**
@@ -342,7 +346,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public void allowCollapse(boolean allowCollapse) {
         this.allowCollapse = allowCollapse;
     }
-    
+
     /**
      * Set a number of tokens limit.
      * @param tokenLimit The number of tokens permitted. -1 value disables limit.
@@ -351,7 +355,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public void setTokenLimit(int tokenLimit){
         this.tokenLimit = tokenLimit;
     }
-    
+
     /**
      * A token view for the object
      *
@@ -484,7 +488,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
-                handled = deleteSelectedObject(false);
+                handled = !canDeleteSelection(1) || deleteSelectedObject(false);
                 break;
         }
 
@@ -1071,15 +1075,16 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                         break;
                     }
 
-                    if (tokenClickStyle == TokenClickStyle.SelectDeselect) {
+                    if (tokenClickStyle == TokenClickStyle.SelectDeselect || !isTokenRemovable(token)) {
                         view.setSelected(false);
                         invalidate();
                         break;
                     }
-
                     //If the view is already selected, we want to delete it
                 case Delete:
-                    removeSpan(this);
+                    if (isTokenRemovable(token)) {
+                        removeSpan(this);
+                    }
                     break;
                 case None:
                 default:
@@ -1343,6 +1348,48 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         };
     }
 
+    /**
+     * Checks if selection can be deleted. This method is called from TokenInputConnection .
+     */
+    @SuppressWarnings("unused")
+    public boolean canDeleteSelection(int beforeLength) {
+        if (objects.size() < 1) return true;
+
+        // if beforeLength is 1, we either have no selection or the call is coming from OnKey Event.
+        // In these scenarios, getSelectionStart() will return the correct value.
+
+        int endSelection = getSelectionEnd();
+        int startSelection = beforeLength == 1 ? getSelectionStart() : endSelection - beforeLength;
+
+        Editable text = getText();
+        TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+
+        // Iterate over all tokens and allow the deletion
+        // if there are no tokens not removable in the selection
+        for (TokenImageSpan span : spans) {
+            int startTokenSelection = text.getSpanStart(span);
+            int endTokenSelection = text.getSpanEnd(span);
+
+            // moving on, no need to check this token
+            if (isTokenRemovable(span.token)) continue;
+
+            if (startSelection == endSelection) {
+                // Delete single
+                if (endTokenSelection + 1 == endSelection) {
+                    return false;
+                }
+            } else {
+                // Delete range
+                // Don't delete if a non removable token is in range
+                if (startSelection <= startTokenSelection
+                        && endTokenSelection + 1 <= endSelection) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private class TokenInputConnection extends InputConnectionWrapper {
 
         public TokenInputConnection(InputConnection target, boolean mutable) {
@@ -1353,11 +1400,16 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // The onKeyPressed method does not always do this.
         @Override
         public boolean deleteSurroundingText(int beforeLength, int afterLength) {
-            //Shouldn't be able to delete prefix, so don't do anything
-            if (getSelectionStart() <= prefix.length())
-                beforeLength = 0;
+            // Shouldn't be able to delete any text with tokens that are not removable
+            if (!canDeleteSelection(beforeLength)) return false;
 
-            return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
+            //Shouldn't be able to delete prefix, so don't do anything
+            if (getSelectionStart() <= prefix.length()) {
+                beforeLength = 0;
+                return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
+            }
+
+            return super.deleteSurroundingText(beforeLength, afterLength);
         }
     }
 }

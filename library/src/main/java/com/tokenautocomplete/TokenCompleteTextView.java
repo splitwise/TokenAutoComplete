@@ -263,7 +263,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     public boolean isTokenRemovable(T token) {
-        return false;
+        return true;
     }
 
     /**

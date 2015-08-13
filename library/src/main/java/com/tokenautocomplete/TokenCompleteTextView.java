@@ -1093,13 +1093,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                         break;
                     }
 
-                    if (tokenClickStyle == TokenClickStyle.SelectDeselect) {
+                    if (tokenClickStyle == TokenClickStyle.SelectDeselect || !isTokenRemovable(token)) {
                         view.setSelected(false);
                         invalidate();
-                        break;
-                    }
-
-                    if (!isTokenRemovable(token)) {
                         break;
                     }
                     //If the view is already selected, we want to delete it

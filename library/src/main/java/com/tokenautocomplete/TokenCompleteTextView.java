@@ -52,7 +52,6 @@ import java.util.List;
 public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
     //Logging
     public static final String TAG = "TokenAutoComplete";
-    public static final int TOKEN_CHAR_LENGTH = 3;
 
     //When the token is deleted...
     public enum TokenDeleteStyle {
@@ -66,7 +65,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public enum TokenClickStyle {
         None(false), //...do nothing, but make sure the cursor is not in the token
         Delete(false),//...delete the token
-        DeleteListener(false),//...delete the token if allowed
         Select(true),//...select the token. A second click will delete it.
         SelectDeselect(true);
 
@@ -84,7 +82,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private Tokenizer tokenizer;
     private T selectedObject;
     private TokenListener<T> listener;
-    private TokenDeleteListener<T> deleteListener;
     private TokenSpanWatcher spanWatcher;
     private TokenTextWatcher textWatcher;
     private ArrayList<T> objects;
@@ -101,7 +98,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
-    private boolean limitBackspace = false;
+    private OnKeyListener keyListener = null;
 
     private int tokenLimit = -1;
 
@@ -114,6 +111,21 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
             addTextChangedListener(textWatcher);
         }
+
+        super.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_DEL) {
+                    return !canDeleteSelection(1);
+                }
+                return keyListener != null && keyListener.onKey(v, keyCode, event);
+            }
+        });
+    }
+
+    @Override
+    public void setOnKeyListener(OnKeyListener l) {
+        keyListener = l;
     }
 
     /**
@@ -128,6 +140,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
             removeTextChangedListener(textWatcher);
         }
+
+        setOnKeyListener(null);
     }
 
     /**
@@ -248,40 +262,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         listener = l;
     }
 
-    /**
-     * Set the listener that will check if a token can be deleted.
-     * To be used with TokenClickStyle.DeleteListener
-     *
-     * @param l The TokenDeleteListener
-     */
-    @SuppressWarnings("unused")
-    public void setTokenDeleteListener(TokenDeleteListener<T> l) {
-        deleteListener = l;
-    }
-
-    /**
-     * Checks if backspace can be used. This method is called from TokenInputConnection .
-     */
-    @SuppressWarnings("unused")
-    private boolean canUseBackspace() {
-        if (deleteListener == null || objects.size() < 1) return true;
-
-        Editable text = getText();
-        boolean hasFreeText = text.length() > objects.size() * TOKEN_CHAR_LENGTH;
-
-        return hasFreeText || deleteListener.allowTokenDelete(objects.get(objects.size() - 1));
-    }
-
-    /**
-     * Allow the system to use TokenClickStyle.DeleteListener to
-     * check whether or not a token can be deleted using backspace.
-     * To be used with TokenClickStyle.DeleteListener
-     *
-     * @param limit Limit Backspace
-     */
-    @SuppressWarnings("unused")
-    public void limitBackspace(boolean limit) {
-        limitBackspace = limit;
+    public boolean isTokenRemovable(T token) {
+        return false;
     }
 
     /**
@@ -1117,14 +1099,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                         break;
                     }
 
+                    if (!isTokenRemovable(token)) {
+                        break;
+                    }
                     //If the view is already selected, we want to delete it
                 case Delete:
-                    removeSpan(this);
-                    break;
-                case DeleteListener:
-                    if (deleteListener == null) {
-                        throw new IllegalArgumentException("Cannot use this Token Click Style without setting a DeleteListener. Use setDeleteListener()");
-                    } else if (deleteListener.allowTokenDelete(token)) {
+                    if (isTokenRemovable(token)) {
                         removeSpan(this);
                     }
                     break;
@@ -1141,10 +1121,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public interface TokenListener<T> {
         void onTokenAdded(T token);
         void onTokenRemoved(T token);
-    }
-
-    public interface TokenDeleteListener<T> {
-        boolean allowTokenDelete(T token);
     }
 
     private class TokenSpanWatcher implements SpanWatcher {
@@ -1394,36 +1370,65 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         };
     }
 
+    /**
+     * Checks if selection can be deleted. This method is called from TokenInputConnection .
+     */
+    @SuppressWarnings("unused")
+    public boolean canDeleteSelection(int beforeLength) {
+        if (objects.size() < 1) return true;
+
+        // if beforeLength is 1, we either have no selection or the call is coming from OnKey Event.
+        // In these scenarios, getSelectionStart() will return the correct value.
+
+        int endSelection = getSelectionEnd();
+        int startSelection = beforeLength == 1 ? getSelectionStart() : endSelection - beforeLength;
+
+        Editable text = getText();
+        TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+
+        // Iterate over all tokens and allow the deletion
+        // if there are no tokens not removable in the selection
+        for (TokenImageSpan span : spans) {
+            int startTokenSelection = text.getSpanStart(span);
+            int endTokenSelection = text.getSpanEnd(span);
+
+            // moving on, no need to check this token
+            if (isTokenRemovable(span.token)) continue;
+
+            if (startSelection == endSelection) {
+                // Delete single
+                if (endTokenSelection + 1 == endSelection) {
+                    return false;
+                }
+            } else {
+                // Delete range
+                // Don't delete if a non removable token is in range
+                if (startSelection <= startTokenSelection
+                        && endTokenSelection + 1 <= endSelection) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private class TokenInputConnection extends InputConnectionWrapper {
 
         public TokenInputConnection(InputConnection target, boolean mutable) {
             super(target, mutable);
         }
 
-        @Override
-        public boolean sendKeyEvent(KeyEvent event) {
-            if (!limitBackspace) return super.sendKeyEvent(event);
-
-            if (event.getAction() == KeyEvent.ACTION_DOWN
-                    && event.getKeyCode() == KeyEvent.KEYCODE_DEL) {
-                if (!canUseBackspace()) {
-                    return false;
-                }
-            }
-            return super.sendKeyEvent(event);
-        }
-
         // This will fire if the soft keyboard delete key is pressed.
         // The onKeyPressed method does not always do this.
         @Override
         public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+            // Shouldn't be able to delete any text with tokens that are not removable
+            if (!canDeleteSelection(beforeLength)) return false;
+
             //Shouldn't be able to delete prefix, so don't do anything
             if (getSelectionStart() <= prefix.length()) {
                 beforeLength = 0;
                 return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
-            } else if (canUseBackspace() && beforeLength == 1 && afterLength == 0) {
-                return sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL))
-                        && sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DEL));
             }
 
             return super.deleteSurroundingText(beforeLength, afterLength);

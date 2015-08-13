@@ -259,6 +259,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         deleteListener = l;
     }
 
+    /**
+     * Checks if backspace can be used. This method is called from TokenInputConnection .
+     */
     @SuppressWarnings("unused")
     private boolean canUseBackspace() {
         if (deleteListener == null || objects.size() < 1) return true;
@@ -269,6 +272,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return hasFreeText || deleteListener.allowTokenDelete(objects.get(objects.size() - 1));
     }
 
+    /**
+     * Allow the system to use TokenClickStyle.DeleteListener to
+     * check whether or not a token can be deleted using backspace.
+     * To be used with TokenClickStyle.DeleteListener
+     *
+     * @param limit Limit Backspace
+     */
     @SuppressWarnings("unused")
     public void limitBackspace(boolean limit) {
         limitBackspace = limit;

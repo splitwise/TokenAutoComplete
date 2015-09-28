@@ -88,7 +88,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
     private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
-    private String prefix = "";
+    private CharSequence prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
     private boolean allowDuplicates = true;
@@ -170,7 +170,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
                 //We need to not do anything when we would delete the prefix
                 if (dstart < prefix.length() && dend == prefix.length()) {
-                    return prefix.substring(dstart, dend);
+                    return prefix.subSequence(dstart, dend);
                 }
                 return null;
             }
@@ -250,7 +250,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      *
      * @param p String with the hint
      */
-    public void setPrefix(String p) {
+    public void setPrefix(CharSequence p) {
         //Have to clear and set the actual text before saving the prefix to avoid the prefix filter
         prefix = "";
         Editable text = getText();
@@ -1283,7 +1283,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * Handle saving the token state
      */
     private static class SavedState extends BaseSavedState {
-        String prefix;
+        CharSequence prefix;
         boolean allowCollapse;
         boolean allowDuplicates;
         boolean performBestGuess;
@@ -1295,7 +1295,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         @SuppressWarnings("unchecked")
         SavedState(Parcel in) {
             super(in);
-            prefix = in.readString();
+            prefix = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
             allowCollapse = in.readInt() != 0;
             allowDuplicates = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
@@ -1312,7 +1312,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         @Override
         public void writeToParcel(@NonNull Parcel out, int flags) {
             super.writeToParcel(out, flags);
-            out.writeString(prefix);
+            TextUtils.writeToParcel(prefix, out, 0);
             out.writeInt(allowCollapse ? 1 : 0);
             out.writeInt(allowDuplicates ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);

@@ -169,8 +169,14 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
 
                 //We need to not do anything when we would delete the prefix
-                if (dstart < prefix.length() && dend == prefix.length()) {
-                    return prefix.subSequence(dstart, dend);
+                if (dstart < prefix.length()) {
+                    if (dend <= prefix.length()) {
+                        //Don't do anything
+                        return prefix.subSequence(dstart, dend);
+                    } else {
+                        //Delete everything up to the prefix
+                        return prefix.subSequence(dstart, prefix.length());
+                    }
                 }
                 return null;
             }

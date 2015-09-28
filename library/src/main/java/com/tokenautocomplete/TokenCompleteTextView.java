@@ -1016,11 +1016,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
                 ColorStateList colors = getHintTextColors();
 
-                HintSpan hintSpan = new HintSpan(null, style, (int)getTextSize(), colors, colors);
+                HintSpan hintSpan = new HintSpan(null, style, (int) getTextSize(), colors, colors);
                 text.insert(prefix.length(), hintText);
                 text.setSpan(hintSpan, prefix.length(), prefix.length() + getHint().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 setSelection(prefix.length());
-
             } else {
                 if (hint == null) {
                     return; //hint already removed
@@ -1227,6 +1226,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public Parcelable onSaveInstanceState() {
         ArrayList<Serializable> baseObjects = getSerializableObjects();
 
+        //We don't want to save the listeners as part of the parent
+        //onSaveInstanceState, so remove them first
         removeListeners();
 
         //ARGH! Apparently, saving the parent state on 2.3 mutates the spannable
@@ -1244,6 +1245,14 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         state.tokenDeleteStyle = deletionStyle;
         state.baseObjects = baseObjects;
         state.splitChar = splitChar;
+
+        //So, when the screen is locked or some other system event pauses execution,
+        //onSaveInstanceState gets called, but it won't restore state later because the
+        //activity is still in memory, so make sure we add the listeners again
+        //They should not be restored in onInstanceState if the app is actually killed
+        //as we removed them before the parent saved instance state, so our adding them in
+        //onRestoreInstanceState is good.
+        addListeners();
 
         return state;
     }

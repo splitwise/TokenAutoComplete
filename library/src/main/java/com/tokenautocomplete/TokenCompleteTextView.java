@@ -98,7 +98,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
-    private OnKeyListener keyListener = null;
 
     private int tokenLimit = -1;
 
@@ -111,21 +110,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
             addTextChangedListener(textWatcher);
         }
-
-        super.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if (keyCode == KeyEvent.KEYCODE_DEL) {
-                    return !canDeleteSelection(1);
-                }
-                return keyListener != null && keyListener.onKey(v, keyCode, event);
-            }
-        });
-    }
-
-    @Override
-    public void setOnKeyListener(OnKeyListener l) {
-        keyListener = l;
     }
 
     /**
@@ -140,8 +124,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
             removeTextChangedListener(textWatcher);
         }
-
-        setOnKeyListener(null);
     }
 
     /**
@@ -506,7 +488,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
-                handled = deleteSelectedObject(false);
+                handled = !canDeleteSelection(1) || deleteSelectedObject(false);
                 break;
         }
 

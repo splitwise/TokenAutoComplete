@@ -447,10 +447,15 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
-        TokenInputConnection conn = new TokenInputConnection(super.onCreateInputConnection(outAttrs), true);
-        outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
-        outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-        return conn;
+        InputConnection superConn = super.onCreateInputConnection(outAttrs);
+        if (superConn != null) {
+            TokenInputConnection conn = new TokenInputConnection(superConn, true);
+            outAttrs.imeOptions &= ~EditorInfo.IME_FLAG_NO_ENTER_ACTION;
+            outAttrs.imeOptions |= EditorInfo.IME_FLAG_NO_EXTRACT_UI;
+            return conn;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -946,7 +951,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
             updateCountSpan();
         }
-
     }
 
     private void insertSpan(T object) {

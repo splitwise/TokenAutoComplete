@@ -475,6 +475,7 @@ setThreshold(1);
 ```java
 setTokenLimit(10);
 ```
+* Prevent specific tokens from being deleted by overriding ```isTokenRemovable``` on your completion view
 
 
 License

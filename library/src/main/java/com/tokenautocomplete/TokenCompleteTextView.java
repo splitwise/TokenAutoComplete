@@ -1111,6 +1111,23 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         });
     }
 
+    public void removeAllObject() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                //To make sure all the appropriate callbacks happen, we just want to piggyback on the
+                //existing code that handles deleting spans when the text changes
+                Editable text = getText();
+                if (text == null) return;
+
+                TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+                for (TokenImageSpan span: spans) {
+                    removeSpan(span);
+                }
+            }
+        });
+    }
+
     private void updateHint() {
         Editable text = getText();
         CharSequence hintText = getHint();

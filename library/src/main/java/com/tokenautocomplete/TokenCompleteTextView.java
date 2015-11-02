@@ -288,8 +288,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param splitChar char[] with a characters that trigger the token creation
      */
     public void setSplitChar(char[] splitChar){
-        if(splitChar[0] == ' ') {
-            splitChar = new char[]{splitChar.length>1 ? splitChar[1] : '§', splitChar[0]};
+        if(splitChar[0] == ' ' && splitChar.length == 1) {
+            splitChar = new char[]{'§', splitChar[0]};
         }
         this.splitChar = splitChar;
         // Keep the tokenizer and splitchars in sync

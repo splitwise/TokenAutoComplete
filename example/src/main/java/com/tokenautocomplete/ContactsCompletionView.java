@@ -32,9 +32,9 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
     @Override
     protected View getViewForObject(Person person) {
 
-        LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
-        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
+        LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        LinearLayout view = (LinearLayout) l.inflate(R.layout.contact_token, (ViewGroup) ContactsCompletionView.this.getParent(), false);
+        ((TextView) view.findViewById(R.id.name)).setText(person.getEmail());
 
         return view;
     }
@@ -47,6 +47,15 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
             return new Person(completionText, completionText.replace(" ", "") + "@example.com");
         } else {
             return new Person(completionText.substring(0, index), completionText);
+        }
+    }
+
+    protected float maxTokenWidth() {
+        float left = getTextLineWidthLeft();
+        if (left < maxTextWidth() / 4) {
+            return maxTextWidth();
+        } else {
+            return left;
         }
     }
 }

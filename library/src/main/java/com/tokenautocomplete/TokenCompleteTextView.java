@@ -395,6 +395,23 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
+    protected float maxTokenWidth() {
+        return maxTextWidth();
+    }
+
+    protected float getTextLineWidthLeft() {
+        CharSequence text = getText();
+
+        if (text != null && lastLayout != null) {
+            float totalWidth = Layout.getDesiredWidth(text, 0, text.length(), lastLayout.getPaint());
+            totalWidth += Layout.getDesiredWidth(" ", 0, 1, lastLayout.getPaint());
+            float lastLine = totalWidth % maxTextWidth();
+            return maxTextWidth() - lastLine;
+        } else {
+            return maxTextWidth();
+        }
+    }
+
     boolean inInvalidate = false;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -753,7 +770,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             return null;
         }
         View tokenView = getViewForObject(obj);
-        return new TokenImageSpan(tokenView, obj, (int)maxTextWidth());
+        return new TokenImageSpan(tokenView, obj, (int)maxTokenWidth());
     }
 
     @Override

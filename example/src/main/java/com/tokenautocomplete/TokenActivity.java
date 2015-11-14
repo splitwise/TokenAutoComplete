@@ -12,7 +12,7 @@ import android.widget.TextView;
 import java.util.List;
 import java.util.Random;
 
-public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener {
+public class TokenActivity extends Activity implements TokenCompleteTextView.TokenListener<Person> {
     ContactsCompletionView completionView;
     Person[] people;
     ArrayAdapter<Person> adapter;
@@ -97,15 +97,14 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         ((TextView)findViewById(R.id.tokens)).setText(sb);
     }
 
-
     @Override
-    public void onTokenAdded(Object token) {
+    public void onTokenAdded(Person token) {
         ((TextView)findViewById(R.id.lastEvent)).setText("Added: " + token);
         updateTokenConfirmation();
     }
 
     @Override
-    public void onTokenRemoved(Object token) {
+    public void onTokenRemoved(Person token) {
         ((TextView)findViewById(R.id.lastEvent)).setText("Removed: " + token);
         updateTokenConfirmation();
     }

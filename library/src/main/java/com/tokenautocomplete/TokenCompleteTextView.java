@@ -1123,11 +1123,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
             if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
-                TokenImageSpan token = (TokenImageSpan) what;
-                objects.add(token.getToken());
-
-                if (listener != null)
-                    listener.onTokenAdded(token.getToken());
+                TokenImageSpan tokenSpan = (TokenImageSpan)what;
+                final T token = tokenSpan.getToken();
+                if (allowDuplicates || !objects.contains(token)) {
+                    objects.add(token);
+                    if (listener != null) listener.onTokenAdded(token);
+                }
             }
         }
 

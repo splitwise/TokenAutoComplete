@@ -1125,6 +1125,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
                 TokenImageSpan tokenSpan = (TokenImageSpan)what;
                 final T token = tokenSpan.getToken();
+
+                // Android reinserts the spans under selection when the user
+                // cuts or copies some text from the context menu
                 if (allowDuplicates || !objects.contains(token)) {
                     objects.add(token);
                     if (listener != null) listener.onTokenAdded(token);

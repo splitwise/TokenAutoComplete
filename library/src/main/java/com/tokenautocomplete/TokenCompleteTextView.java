@@ -146,7 +146,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         addListeners();
 
         setTextIsSelectable(false);
-        setLongClickable(false);
 
         //In theory, get the soft keyboard to not supply suggestions. very unreliable < API 11
         setInputType(getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);

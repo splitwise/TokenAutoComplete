@@ -391,7 +391,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         if (hintVisible) return ""; //Can't have any text if the hint is visible
 
         Editable editable = getText();
-        int end = getSelectionEnd();
+        int end = getSelectionWordEnd();
         int start = tokenizer.findTokenStart(editable, end);
         if (start < prefix.length()) {
             start = prefix.length();
@@ -428,7 +428,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public boolean enoughToFilter() {
         Editable text = getText();
 
-        int end = getSelectionEnd();
+        int end = getSelectionWordEnd();
         if (end < 0 || tokenizer == null) {
             return false;
         }
@@ -747,6 +747,24 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
+    /**
+     * Get the position of the end of the word were the cursor is positioned. A word is defined as
+     * a sequence of characters without the presence of a character in {@link #splitChar}.
+     *
+     * @return The position of the end of the word were the cursor is positioned.
+     */
+    public int getSelectionWordEnd()
+    {
+        int end = getSelectionEnd();
+
+        //Increase end until the end is reached or a split char is detected
+        while (end < length() && !isSplitChar(getText().charAt(end))) {
+            end++;
+        }
+
+        return end;
+    }
+
     private SpannableStringBuilder buildSpannableForText(CharSequence text) {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
@@ -774,7 +792,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 
         Editable editable = getText();
-        int end = getSelectionEnd();
+        int end = getSelectionWordEnd();
         int start = tokenizer.findTokenStart(editable, end);
         if (start < prefix.length()) {
             start = prefix.length();
@@ -1387,7 +1405,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // if beforeLength is 1, we either have no selection or the call is coming from OnKey Event.
         // In these scenarios, getSelectionStart() will return the correct value.
 
-        int endSelection = getSelectionEnd();
+        int endSelection = getSelectionWordEnd();
         int startSelection = beforeLength == 1 ? getSelectionStart() : endSelection - beforeLength;
 
         Editable text = getText();

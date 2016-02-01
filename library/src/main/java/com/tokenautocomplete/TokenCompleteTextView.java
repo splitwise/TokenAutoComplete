@@ -391,8 +391,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         if (hintVisible) return ""; //Can't have any text if the hint is visible
 
         Editable editable = getText();
-        int end = getSelectionEnd();
-        int start = tokenizer.findTokenStart(editable, end);
+        int cursorPosition = getSelectionEnd();
+        int end = tokenizer.findTokenEnd(editable, cursorPosition);
+        int start = tokenizer.findTokenStart(editable, cursorPosition);
         if (start < prefix.length()) {
             start = prefix.length();
         }
@@ -428,12 +429,19 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public boolean enoughToFilter() {
         Editable text = getText();
 
-        int end = getSelectionEnd();
-        if (end < 0 || tokenizer == null) {
+        if (tokenizer == null)
+        {
             return false;
         }
 
-        int start = tokenizer.findTokenStart(text, end);
+        int cursorPosition = getSelectionEnd();
+
+        if (cursorPosition < 0) {
+            return false;
+        }
+
+        int end = tokenizer.findTokenEnd(text, cursorPosition);
+        int start = tokenizer.findTokenStart(text, cursorPosition);
         if (start < prefix.length()) {
             start = prefix.length();
         }
@@ -774,8 +782,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 
         Editable editable = getText();
-        int end = getSelectionEnd();
-        int start = tokenizer.findTokenStart(editable, end);
+        int cursorPosition = getSelectionEnd();
+        int end = tokenizer.findTokenEnd(editable, cursorPosition);
+        int start = tokenizer.findTokenStart(editable, cursorPosition);
         if (start < prefix.length()) {
             start = prefix.length();
         }

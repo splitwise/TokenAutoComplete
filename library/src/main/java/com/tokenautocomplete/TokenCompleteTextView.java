@@ -44,7 +44,7 @@ import java.util.List;
 /**
  * Gmail style auto complete view with easy token customization
  * override getViewForObject to provide your token view
- * <p/>
+ * <br>
  * Created by mgod on 9/12/13.
  *
  * @author mgod
@@ -256,6 +256,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         listener = l;
     }
 
+    /**
+     * Override if you want to prevent a token from being removed. Defaults to true.
+     * @param token the token to check
+     * @return false if the token should not be removed, true if it's ok to remove it.
+     */
+    @SuppressWarnings("unused")
     public boolean isTokenRemovable(T token) {
         return true;
     }
@@ -329,7 +335,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     /**
      * Sets whether to allow duplicate objects. If false, when the user selects
      * an object that's already in the view, the current text is just cleared.
-     * <p/>
+     * <br>
      * Defaults to true. Requires that the objects implement equals() correctly.
      *
      * @param allow boolean
@@ -1388,6 +1394,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     /**
      * Checks if selection can be deleted. This method is called from TokenInputConnection .
+     * @param beforeLength the number of characters before the current selection end to check
+     * @return true if there are no non-deletable pieces of the section
      */
     @SuppressWarnings("unused")
     public boolean canDeleteSelection(int beforeLength) {

@@ -30,7 +30,7 @@ task jar(type: Jar) {
 }
 
 dependencies {
-    compile 'com.android.support:support-annotations:21.0.2'
+    compile 'com.android.support:support-annotations:23.1.1'
 }
 
 apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'

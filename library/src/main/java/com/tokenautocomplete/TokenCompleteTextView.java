@@ -300,10 +300,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param splitChar char[] with a characters that trigger the token creation
      */
     public void setSplitChar(char[] splitChar) {
-        if (splitChar[0] == ' ' && splitChar.length == 1) {
-            splitChar = new char[]{'§', splitChar[0]};
+        char[] fixed = splitChar;
+        if (splitChar[0] == ' ') {
+            fixed = new char[splitChar.length + 1];
+            fixed[0] = '§';
+            System.arraycopy(splitChar, 0, fixed, 1, splitChar.length);
         }
-        this.splitChar = splitChar;
+        this.splitChar = fixed;
         // Keep the tokenizer and splitchars in sync
         this.setTokenizer(new CharacterTokenizer(splitChar));
     }
@@ -315,8 +318,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      */
     @SuppressWarnings("unused")
     public void setSplitChar(char splitChar) {
-        if (splitChar == ' ') this.setSplitChar(new char[]{'§', splitChar});
-        else this.setSplitChar(new char[]{splitChar});
+        setSplitChar(new char[]{splitChar});
     }
 
     /**
@@ -393,16 +395,28 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      */
     abstract protected T defaultObject(String completionText);
 
+    private int getCorrectedTokenEnd() {
+        Editable editable = getText();
+        int cursorPosition = getSelectionEnd();
+        return tokenizer.findTokenEnd(editable, cursorPosition);
+    }
+
+    private int getCorrectedTokenBeginning(int end) {
+        int start = tokenizer.findTokenStart(getText(), end);
+        if (start < prefix.length()) {
+            start = prefix.length();
+        }
+        return start;
+    }
+
     protected String currentCompletionText() {
         if (hintVisible) return ""; //Can't have any text if the hint is visible
 
         Editable editable = getText();
-        int cursorPosition = getSelectionEnd();
-        int end = tokenizer.findTokenEnd(editable, cursorPosition);
-        int start = tokenizer.findTokenStart(editable, cursorPosition);
-        if (start < prefix.length()) {
-            start = prefix.length();
-        }
+        int end = getCorrectedTokenEnd();
+        int start = getCorrectedTokenBeginning(end);
+
+        //Some keyboards add extra spaces when doing corrections, so
         return TextUtils.substring(editable, start, end);
     }
 
@@ -433,10 +447,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public boolean enoughToFilter() {
-        Editable text = getText();
-
-        if (tokenizer == null)
-        {
+        if (tokenizer == null) {
             return false;
         }
 
@@ -446,11 +457,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             return false;
         }
 
-        int end = tokenizer.findTokenEnd(text, cursorPosition);
-        int start = tokenizer.findTokenStart(text, cursorPosition);
-        if (start < prefix.length()) {
-            start = prefix.length();
-        }
+        int end = getCorrectedTokenEnd();
+        int start = getCorrectedTokenBeginning(end);
 
         //Don't allow 0 length entries to filter
         return end - start >= Math.max(getThreshold(), 1);
@@ -789,11 +797,15 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
         Editable editable = getText();
         int cursorPosition = getSelectionEnd();
-        int end = tokenizer.findTokenEnd(editable, cursorPosition);
-        int start = tokenizer.findTokenStart(editable, cursorPosition);
-        if (start < prefix.length()) {
-            start = prefix.length();
+        int end = cursorPosition;
+        int start = cursorPosition;
+        if (!hintVisible) {
+            //If you force the drop down to show when the hint is visible, you can run a completion
+            //on the hint. If the hint includes commas, this truncates and inserts the hint in the field
+            end = getCorrectedTokenEnd();
+            start = getCorrectedTokenBeginning(end);
         }
+
         String original = TextUtils.substring(editable, start, end);
 
         if (editable != null) {

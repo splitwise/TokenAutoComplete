@@ -16,24 +16,10 @@ import java.util.ArrayList;
 public class CharacterTokenizer implements MultiAutoCompleteTextView.Tokenizer {
     ArrayList<Character> splitChar;
 
-    @SuppressWarnings("unused")
-    CharacterTokenizer(){
-        super();
-        this.splitChar = new ArrayList<>(1);
-        this.splitChar.add(',');
-    }
-
     CharacterTokenizer(char[] splitChar){
         super();
         this.splitChar = new ArrayList<>(splitChar.length);
         for(char c : splitChar) this.splitChar.add(c);
-    }
-
-    @SuppressWarnings("unused")
-    CharacterTokenizer(char splitChar){
-        super();
-        this.splitChar = new ArrayList<>(1);
-        this.splitChar.add(splitChar);
     }
 
     public int findTokenStart(CharSequence text, int cursor) {

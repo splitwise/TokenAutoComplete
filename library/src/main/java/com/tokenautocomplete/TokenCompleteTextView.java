@@ -217,7 +217,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
         Filter filter = getFilter();
         if (filter != null) {
-            filter.filter(text.subSequence(start, end), this);
+            if (hintVisible) {
+                filter.filter("");
+            } else {
+                filter.filter(text.subSequence(start, end), this);
+            }
         }
     }
 
@@ -447,7 +451,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public boolean enoughToFilter() {
-        if (tokenizer == null) {
+        if (tokenizer == null || hintVisible) {
             return false;
         }
 

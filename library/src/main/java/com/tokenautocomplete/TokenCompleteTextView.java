@@ -13,6 +13,7 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Layout;
+import android.text.Selection;
 import android.text.SpanWatcher;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
@@ -25,6 +26,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
@@ -398,6 +400,77 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @return a best guess for what the user meant to complete
      */
     abstract protected T defaultObject(String completionText);
+
+    /**
+     * Correctly build accessibility string for token contents
+     *
+     * This seems to be a hidden API, but there doesn't seem to be another reasonable way
+     * @return custom string for accessibility
+     */
+    @SuppressWarnings("unused")
+    public CharSequence getTextForAccessibility() {
+        if (getObjects().size() == 0) {
+            return getText();
+        }
+
+        SpannableStringBuilder description = new SpannableStringBuilder();
+        Editable text = getText();
+        int selectionStart = -1;
+        int selectionEnd = -1;
+        int i;
+        //Need to take the existing tet buffer and
+        // - replace all tokens with a decent string representation of the object
+        // - set the selection span to the corresponding location in the new CharSequence
+        for (i = 0; i < text.length(); ++i) {
+            //See if this is where we should start the selection
+            int origSelectionStart = Selection.getSelectionStart(text);
+            if (i == origSelectionStart) {
+                selectionStart = description.length();
+            }
+            int origSelectionEnd = Selection.getSelectionEnd(text);
+            if (i == origSelectionEnd) {
+                selectionEnd = description.length();
+            }
+
+            //Replace token spans
+            TokenImageSpan[] tokens = text.getSpans(i, i, TokenImageSpan.class);
+            if (tokens.length > 0) {
+                TokenImageSpan token = tokens[0];
+                description = description.append(tokenizer.terminateToken(token.getToken().toString()));
+                i = text.getSpanEnd(token);
+                continue;
+            }
+
+            description = description.append(text.subSequence(i, i + 1));
+        }
+
+        int origSelectionStart = Selection.getSelectionStart(text);
+        if (i == origSelectionStart) {
+            selectionStart = description.length();
+        }
+        int origSelectionEnd = Selection.getSelectionEnd(text);
+        if (i == origSelectionEnd) {
+            selectionEnd = description.length();
+        }
+
+        if (selectionStart >= 0 && selectionEnd >= 0) {
+            Selection.setSelection(description, selectionStart, selectionEnd);
+        }
+
+        return description;
+    }
+
+    @Override
+    public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
+        super.onInitializeAccessibilityEvent(event);
+
+        if (event.getEventType() == AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED) {
+            CharSequence text = getTextForAccessibility();
+            event.setFromIndex(Selection.getSelectionStart(text));
+            event.setToIndex(Selection.getSelectionEnd(text));
+            event.setItemCount(text.length());
+        }
+    }
 
     private int getCorrectedTokenEnd() {
         Editable editable = getText();

@@ -543,9 +543,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public void performCompletion() {
-        if (getListSelection() == ListView.INVALID_POSITION && enoughToFilter()) {
+        if ((getAdapter() == null || getListSelection() == ListView.INVALID_POSITION) && enoughToFilter()) {
             Object bestGuess;
-            if (getAdapter().getCount() > 0 && performBestGuess) {
+            if (getAdapter() != null && getAdapter().getCount() > 0 && performBestGuess) {
                 bestGuess = getAdapter().getItem(0);
             } else {
                 bestGuess = defaultObject(currentCompletionText());

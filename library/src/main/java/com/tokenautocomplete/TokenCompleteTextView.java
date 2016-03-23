@@ -1069,7 +1069,15 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     private void insertSpan(T object) {
-        insertSpan(object, object.toString());
+        String spanString;
+        // The information about the original text is lost here, so other than "toString" we have no data
+        if (deletionStyle == TokenDeleteStyle.ToString) {
+            spanString = object != null ? object.toString() : "";
+        } else {
+            spanString = "";
+        }
+
+        insertSpan(object, spanString);
     }
 
     private void insertSpan(TokenImageSpan span) {

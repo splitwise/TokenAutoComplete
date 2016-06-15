@@ -1290,18 +1290,20 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
                 //NOTE: I'm not completely sure this won't cause problems if we get stuck in a text changed loop
                 //but it appears to work fine. Spans will stop getting removed if this breaks.
-                spansToRemove = new ArrayList<>();
+                ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
                 for (TokenImageSpan token : spans) {
                     if (text.getSpanStart(token) < end && start < text.getSpanEnd(token)) {
                         spansToRemove.add(token);
                     }
                 }
+                this.spansToRemove = spansToRemove;
             }
         }
 
         @Override
         public void afterTextChanged(Editable text) {
             ArrayList<TokenImageSpan> spansCopy = new ArrayList<>(spansToRemove);
+            spansToRemove.clear();
             for (TokenImageSpan token : spansCopy) {
                 int spanStart = text.getSpanStart(token);
                 int spanEnd = text.getSpanEnd(token);

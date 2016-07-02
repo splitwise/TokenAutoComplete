@@ -12,10 +12,10 @@ import java.util.List;
 /**
  * Simplified custom filtered ArrayAdapter
  * override keepObject with your test for filtering
- *
- * Based on gist https://gist.github.com/tobiasschuerg/3554252/raw/30634bf9341311ac6ad6739ef094222fc5f07fa8/FilteredArrayAdapter.java
- * by Tobias Schürg
- *
+ * <p>
+ * Based on gist <a href="https://gist.github.com/tobiasschuerg/3554252/raw/30634bf9341311ac6ad6739ef094222fc5f07fa8/FilteredArrayAdapter.java">
+ * FilteredArrayAdapter</a> by Tobias Schürg
+ * <p>
  * Created on 9/17/13.
  * @author mgod
  */

@@ -62,9 +62,9 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
     @Override
     protected View getViewForObject(Person person) {
 
-        LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
-        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
+        LayoutInflater l = (LayoutInflater) getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
+        TextView view = (TextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
+        view.setText(person.getEmail());
 
         return view;
     }
@@ -85,31 +85,22 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 Layout code for contact_token
 
 ```xml
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/name"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_width="wrap_content">
-
-    <TextView android:id="@+id/name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/token_background"
-        android:padding="5dp"
-        android:textColor="@android:color/white"
-        android:textSize="18sp" />
-
-</LinearLayout>
+    android:background="@drawable/token_background"
+    android:padding="5dp"
+    android:textColor="@android:color/white"
+    android:textSize="18sp" />
 ```
 
-Token backgound drawable
+Token background drawable
 
 ```xml
 <shape xmlns:android="http://schemas.android.com/apk/res/android" >
     <solid android:color="#ffafafaf" />
-    <corners
-        android:topLeftRadius="5dp"
-        android:bottomLeftRadius="5dp"
-        android:topRightRadius="5dp"
-        android:bottomRightRadius="5dp" />
+    <corners android:radius="5dp" />
 </shape>
 ```
 
@@ -302,12 +293,7 @@ token_default.xml
         android:color="#ffd4d4d4" />
     <solid android:color="#ffafafaf" />
 
-    <corners
-        android:topLeftRadius="3dp"
-        android:bottomLeftRadius="3dp"
-        android:topRightRadius="3dp"
-        android:bottomRightRadius="3dp"/>
-
+    <corners android:radius="3dp"/>
 </shape>
 ```
 
@@ -319,11 +305,7 @@ token_selected.xml
         android:color="#ffa4a4a4" />
     <solid android:color="#ff7a7a7a" />
 
-    <corners
-        android:topLeftRadius="3dp"
-        android:bottomLeftRadius="3dp"
-        android:topRightRadius="3dp"
-        android:bottomRightRadius="3dp"/>
+    <corners android:radius="3dp"/>
 </shape>
 ```
 
@@ -331,45 +313,35 @@ If you need more detailed view customization like changing a picture in the toke
 
 ### Example custom view
 
-In a view implementation (see ```com.tokenautocomplete.TokenLayout```):
+In a view implementation (see ```com.tokenautocomplete.TokenTextView```):
 ```java
-public class TokenLayout extends LinearLayout {
+public class TokenTextView extends TextView {
 
     ...
 
     @Override
     public void setSelected(boolean selected) {
         super.setSelected(selected);
-
-        TextView v = (TextView)findViewById(R.id.name);
-        if (selected) {
-            v.setCompoundDrawablesWithIntrinsicBounds(0,0,R.drawable.close_x, 0);
-        } else {
-            v.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);
-        }
+        setCompoundDrawablesWithIntrinsicBounds(0, 0, selected ? R.drawable.close_x : 0, 0);
     }
 }
 ```
 
 contact_token.xml
 ```xml
-<com.tokenautocomplete.TokenLayout 
+<com.tokenautocomplete.TokenTextView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/name"
     android:layout_width="wrap_content"
-    android:orientation="horizontal">
-
-    <TextView android:id="@+id/name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/token_background"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        android:paddingLeft="3dp"
-        android:paddingRight="3dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="4dp" />
-</com.tokenautocomplete.TokenLayout>
+    android:layout_height="wrap_content"
+    android:background="@drawable/token_background"
+    android:textColor="@android:color/white"
+    android:textSize="14sp"
+    android:maxLines="1"
+    android:ellipsize="end"
+    android:padding="4dp"
+    tools:text="Glenda Jönsson" />
 ```
 
 Inflate your custom view:
@@ -381,12 +353,10 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     @Override
     protected View getViewForObject(Person person) {
-
         LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
-        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
-
-        return view;
+        TokenTextView token = (TokenTextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
+        token.setText(person.getEmail());
+        return token;
     }
 }
 ```

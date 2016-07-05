@@ -13,13 +13,13 @@ import android.widget.TextView;
  * Simple custom view example to show how to get selected events from the token
  * view. See ContactsCompletionView and contact_token.xml for usage
  */
-public class TokenLayout extends LinearLayout {
+public class TokenTextView extends TextView {
 
-    public TokenLayout(Context context) {
+    public TokenTextView(Context context) {
         super(context);
     }
 
-    public TokenLayout(Context context, AttributeSet attrs) {
+    public TokenTextView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
@@ -27,12 +27,6 @@ public class TokenLayout extends LinearLayout {
     @Override
     public void setSelected(boolean selected) {
         super.setSelected(selected);
-
-        TextView v = (TextView)findViewById(R.id.name);
-        if (selected) {
-            v.setCompoundDrawablesWithIntrinsicBounds(0,0,R.drawable.close_x, 0);
-        } else {
-            v.setCompoundDrawablesWithIntrinsicBounds(0,0,0,0);
-        }
+        setCompoundDrawablesWithIntrinsicBounds(0, 0, selected ? R.drawable.close_x : 0, 0);
     }
 }

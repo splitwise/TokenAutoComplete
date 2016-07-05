@@ -31,12 +31,10 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     @Override
     protected View getViewForObject(Person person) {
-
         LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-        LinearLayout view = (LinearLayout)l.inflate(R.layout.contact_token, (ViewGroup)ContactsCompletionView.this.getParent(), false);
-        ((TextView)view.findViewById(R.id.name)).setText(person.getEmail());
-
-        return view;
+        TokenTextView token = (TokenTextView) l.inflate(R.layout.contact_token, (ViewGroup) getParent(), false);
+        token.setText(person.getEmail());
+        return token;
     }
 
     @Override

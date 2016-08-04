@@ -1,4 +1,14 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.3.4'
+    }
+}
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
@@ -22,15 +32,15 @@ android {
     }
 }
 
-task jar(type: Jar) {
-    dependsOn assembleRelease
-    baseName project.POM_ARTIFACT_ID
-    version project.VERSION_NAME
-    from fileTree(dir: 'build/intermediates/classes/release/')
-}
-
 dependencies {
     compile 'com.android.support:support-annotations:23.1.1'
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+publish {
+    userOrg = 'novoda'
+    groupId = 'com.novoda'
+    artifactId = 'tokenautocomplete'
+    publishVersion = '0.0.1'
+    desc = "Gmail style MultiAutoCompleteTextView for Android. Novoda's fork of the TokenAutoComplete library."
+    website = 'https://github.com/novoda/TokenAutoComplete'
+}

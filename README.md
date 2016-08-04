@@ -380,6 +380,10 @@ All tokens will turn into the partial completion text they replaced
 
 Tokens will be replaced with the toString value of the objects they represent when they are deleted
 
+#### TokenCompleteTextView.TokenDeleteStyle.SelectThenDelete
+
+This mode will first select the token and when pressing the 'delete' key again it'll delete the selected token
+
 Restoring the view state
 ========================
 

@@ -823,6 +823,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // See if the user left any unfinished tokens and finish them
         if (!hasFocus) performCompletion();
 
+        // Clear sections when focus changes to avoid a token remaining selected
+        clearSelections();
+
         // Collapse the view to a single line
         if (allowCollapse) performCollapse(hasFocus);
     }

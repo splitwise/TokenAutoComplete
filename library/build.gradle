@@ -22,13 +22,6 @@ android {
     }
 }
 
-task jar(type: Jar) {
-    dependsOn assembleRelease
-    baseName project.POM_ARTIFACT_ID
-    version project.VERSION_NAME
-    from fileTree(dir: 'build/intermediates/classes/release/')
-}
-
 dependencies {
     compile 'com.android.support:support-annotations:23.1.1'
     compile 'com.android.support:appcompat-v7:22.2.0'

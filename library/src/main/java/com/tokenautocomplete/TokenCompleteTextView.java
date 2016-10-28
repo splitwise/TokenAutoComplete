@@ -461,6 +461,23 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return description;
     }
 
+    /**
+     * Clear the completion text only.
+     */
+    @SuppressWarnings("unused")
+    public void clearCompletionText() {
+        //Respect currentCompletionText in case hint is visible or if other checks are added.
+        if (currentCompletionText().length() == 0){
+            return;
+        }
+
+        Editable editable = getText();
+        int end = getCorrectedTokenEnd();
+        int start = getCorrectedTokenBeginning(end);
+
+        editable.delete(start, end);
+    }
+
     @Override
     public void onInitializeAccessibilityEvent(AccessibilityEvent event) {
         super.onInitializeAccessibilityEvent(event);

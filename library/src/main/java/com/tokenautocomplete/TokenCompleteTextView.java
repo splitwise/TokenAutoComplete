@@ -1198,7 +1198,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         invalidate();
     }
 
-    protected class TokenImageSpan extends ViewSpan implements NoCopySpan {
+    public class TokenImageSpan extends ViewSpan implements NoCopySpan {
         private T token;
 
         public TokenImageSpan(View d, T token, int maxWidth) {

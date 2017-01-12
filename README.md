@@ -1,3 +1,7 @@
+### Planning note
+
+If you're already using the library, I'm looking at redesigning some of the core components to make this library more reliable and deal with some lingering bugs. Please give me feedback on how you're using it [here](https://github.com/splitwise/TokenAutoComplete/issues/272)
+
 ### Upgrading from 1.* to 2.0
 
 There is one breaking change from 1.* to 2.0. You need to extend ```TokenCompleteTextView<Object>``` instead of ```TokenCompleteTextView```.

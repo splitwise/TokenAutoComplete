@@ -3,6 +3,7 @@ package com.tokenautocomplete;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -17,11 +18,13 @@ import android.text.NoCopySpan;
 import android.text.Selection;
 import android.text.SpanWatcher;
 import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.QwertyKeyListener;
+import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -289,6 +292,38 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         prefix = p;
 
         updateHint();
+    }
+
+    /**
+     * A String of text that is shown before all the tokens inside the EditText
+     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
+     *
+     * @param prefix prefix
+     * @param colorHex Color (hex format or color names) for the prefix. Formats copied from
+     * {@link android.graphics.Color#parseColor(String)}
+     *                 Supported formats are: #RRGGBB #AARRGGBB
+     *                 or one of the following names: 'red', 'blue', 'green', 'black', 'white',
+     *                 'gray', 'cyan', 'magenta', 'yellow', 'lightgray', 'darkgray', 'grey',
+     *                 'lightgrey', 'darkgrey', 'aqua', 'fuchsia', 'lime', 'maroon', 'navy',
+     *                 'olive', 'purple', 'silver', 'teal'.
+     */
+    public void setPrefix(CharSequence prefix, String colorHex) {
+        SpannableString spannablePrefix = new SpannableString(prefix);
+        spannablePrefix.setSpan(new ForegroundColorSpan(Color.parseColor(colorHex)), 0, spannablePrefix.length(), 0);
+        setPrefix(spannablePrefix);
+    }
+
+    /**
+     * A String of text that is shown before all the tokens inside the EditText
+     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
+     *
+     * @param prefix prefix
+     * @param color A single color value in the form 0xAARRGGBB.
+     */
+    public void setPrefix(CharSequence prefix, int color) {
+        SpannableString spannablePrefix = new SpannableString(prefix);
+        spannablePrefix.setSpan(new ForegroundColorSpan(color), 0, spannablePrefix.length(), 0);
+        setPrefix(spannablePrefix);
     }
 
     /**

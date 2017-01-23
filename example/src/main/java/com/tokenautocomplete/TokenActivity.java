@@ -63,7 +63,7 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
 
 
         if (savedInstanceState == null) {
-            completionView.setPrefix("To: ");
+            completionView.setPrefix("To: ", "blue");
             completionView.addObject(people[0]);
             completionView.addObject(people[1]);
         }

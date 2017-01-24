@@ -295,27 +295,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     /**
-     * A String of text that is shown before all the tokens inside the EditText
-     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
-     *
-     * @param prefix prefix
-     * @param colorHex Color (hex format or color names) for the prefix. Formats copied from
-     * {@link android.graphics.Color#parseColor(String)}
-     *                 Supported formats are: #RRGGBB #AARRGGBB
-     *                 or one of the following names: 'red', 'blue', 'green', 'black', 'white',
-     *                 'gray', 'cyan', 'magenta', 'yellow', 'lightgray', 'darkgray', 'grey',
-     *                 'lightgrey', 'darkgrey', 'aqua', 'fuchsia', 'lime', 'maroon', 'navy',
-     *                 'olive', 'purple', 'silver', 'teal'.
-     */
-    public void setPrefix(CharSequence prefix, String colorHex) {
-        SpannableString spannablePrefix = new SpannableString(prefix);
-        spannablePrefix.setSpan(new ForegroundColorSpan(Color.parseColor(colorHex)), 0, spannablePrefix.length(), 0);
-        setPrefix(spannablePrefix);
-    }
-
-    /**
-     * A String of text that is shown before all the tokens inside the EditText
-     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
      *
      * @param prefix prefix
      * @param color A single color value in the form 0xAARRGGBB.

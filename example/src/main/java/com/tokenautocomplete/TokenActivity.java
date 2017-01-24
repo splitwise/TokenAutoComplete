@@ -1,6 +1,7 @@
 package com.tokenautocomplete;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -63,7 +64,7 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
 
 
         if (savedInstanceState == null) {
-            completionView.setPrefix("To: ");
+            completionView.setPrefix("To: ", Color.parseColor("blue"));
             completionView.addObject(people[0]);
             completionView.addObject(people[1]);
         }

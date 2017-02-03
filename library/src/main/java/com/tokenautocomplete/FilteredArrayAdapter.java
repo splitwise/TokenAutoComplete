@@ -103,10 +103,14 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      *         (http://stackoverflow.com/a/2726348/570168)
      */
     private class AppFilter extends Filter {
+        private final Object sourceLock = new Object();
 
         @Override
         protected FilterResults performFiltering(CharSequence chars) {
-            ArrayList<T> sourceObjects = new ArrayList<T>(originalObjects);
+            ArrayList<T> sourceObjects;
+            synchronized (sourceLock) {
+                sourceObjects = new ArrayList<T>(originalObjects);
+            }
 
             FilterResults result = new FilterResults();
             if (chars != null && chars.length() > 0) {

@@ -284,10 +284,15 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      */
     public void setPrefix(CharSequence p) {
         //Have to clear and set the actual text before saving the prefix to avoid the prefix filter
+        CharSequence prevPrefix = prefix;
         prefix = "";
         Editable text = getText();
         if (text != null) {
-            text.insert(0, p);
+            if (prevPrefix != null) {
+                text.replace(0, prevPrefix.length(), p);
+            } else {
+                text.insert(0, p);
+            }
         }
         prefix = p;
 

@@ -105,6 +105,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
+    private boolean completeOnFocusLost = true;
 
     private int tokenLimit = -1;
 
@@ -409,6 +410,18 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         this.tokenLimit = tokenLimit;
     }
 
+    /**
+     * Set whether we should try to complete any unfinished tokens when the view loses focus.
+     *
+     * @param completeOnFocusLost true if it should complete any unfinished tokens after losing
+     *                            focus, othewise leave the remaining text as is.
+     */
+    @SuppressWarnings("unused")
+    public void completeOnFocusLost(boolean completeOnFocusLost) {
+        this.completeOnFocusLost = completeOnFocusLost;
+    }
+
+    /**
     /**
      * A token view for the object
      *
@@ -862,7 +875,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         super.onFocusChanged(hasFocus, direction, previous);
 
         // See if the user left any unfinished tokens and finish them
-        if (!hasFocus) performCompletion();
+        if (completeOnFocusLost && !hasFocus) performCompletion();
 
         // Clear sections when focus changes to avoid a token remaining selected
         clearSelections();

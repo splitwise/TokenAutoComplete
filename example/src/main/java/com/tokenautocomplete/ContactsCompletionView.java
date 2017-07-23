@@ -6,8 +6,6 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 /**
  * Sample token completion view for basic contact info
@@ -46,5 +44,10 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
         } else {
             return new Person(completionText.substring(0, index), completionText);
         }
+    }
+
+    @Override
+    protected Class<Person> getParcelableClass() {
+        return Person.class;
     }
 }

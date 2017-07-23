@@ -3,7 +3,6 @@ package com.tokenautocomplete;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -42,7 +41,6 @@ import android.widget.ListView;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1377,32 +1375,36 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
-    protected ArrayList<Serializable> getSerializableObjects() {
-        ArrayList<Serializable> serializables = new ArrayList<>();
+    protected ArrayList<Parcelable> getParcelableObjects() {
+        ArrayList<Parcelable> parcelables = new ArrayList<>();
         for (Object obj : getObjects()) {
-            if (obj instanceof Serializable) {
-                serializables.add((Serializable) obj);
+            if (obj instanceof Parcelable) {
+                parcelables.add((Parcelable) obj);
             } else {
                 Log.e(TAG, "Unable to save '" + obj + "'");
+                return new ArrayList<>();
             }
         }
-        if (serializables.size() != objects.size()) {
-            String message = "You should make your objects Serializable or override\n" +
-                    "getSerializableObjects and convertSerializableArrayToObjectArray";
+        if (parcelables.size() != objects.size()) {
+            String message = "Your objects are not Parcelable and won't be automatically saved and " +
+                    "restored.";
             Log.e(TAG, message);
         }
-
-        return serializables;
+        return parcelables;
     }
 
-    @SuppressWarnings("unchecked")
-    protected ArrayList<T> convertSerializableArrayToObjectArray(ArrayList<Serializable> s) {
-        return (ArrayList<T>) (ArrayList) s;
-    }
+    /**
+     * In order to safely parcel objects, we must know the actual class type of the objects.
+     * Subclasses are forced to implement this method, and should return a Class object for
+     * type T.
+     *
+     * @return A Class object for type T.
+     */
+    protected abstract Class<T> getParcelableClass();
 
     @Override
     public Parcelable onSaveInstanceState() {
-        ArrayList<Serializable> baseObjects = getSerializableObjects();
+        ArrayList<Parcelable> baseObjects = getParcelableObjects();
 
         //We don't want to save the listeners as part of the parent
         //onSaveInstanceState, so remove them first
@@ -1423,6 +1425,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         state.tokenDeleteStyle = deletionStyle;
         state.baseObjects = baseObjects;
         state.splitChar = splitChar;
+        state.parcelableClass = getParcelableClass();
 
         //So, when the screen is locked or some other system event pauses execution,
         //onSaveInstanceState gets called, but it won't restore state later because the
@@ -1456,8 +1459,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         splitChar = ss.splitChar;
 
         addListeners();
-        for (T obj : convertSerializableArrayToObjectArray(ss.baseObjects)) {
-            addObject(obj);
+        for (Parcelable obj : ss.baseObjects) {
+            addObject((T) obj);
         }
 
         // Collapse the view if necessary
@@ -1482,8 +1485,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
         TokenDeleteStyle tokenDeleteStyle;
-        ArrayList<Serializable> baseObjects;
+        ArrayList<Parcelable> baseObjects;
         char[] splitChar;
+        Class parcelableClass;
 
         @SuppressWarnings("unchecked")
         SavedState(Parcel in) {
@@ -1494,7 +1498,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
-            baseObjects = (ArrayList<Serializable>) in.readSerializable();
+            if (parcelableClass != null) {
+                in.readList(baseObjects, parcelableClass.getClassLoader());
+            } else {
+                baseObjects = new ArrayList<>();
+            }
             splitChar = in.createCharArray();
         }
 
@@ -1511,7 +1519,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             out.writeInt(tokenDeleteStyle.ordinal());
-            out.writeSerializable(baseObjects);
+            out.writeTypedList(baseObjects);
             out.writeCharArray(splitChar);
         }
 

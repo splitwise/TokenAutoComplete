@@ -3,7 +3,6 @@ package com.tokenautocomplete;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -48,7 +47,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Gmail style auto complete view with easy token customization
+ * GMail style auto complete view with easy token customization
  * override getViewForObject to provide your token view
  * <br>
  * Created by mgod on 9/12/13.
@@ -161,10 +160,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // Listen to IME action keys
         setOnEditorActionListener(this);
 
-        // Initialise the textfilter (listens for the splitchars)
+        // Initialise the text filter (listens for the split chars)
         setFilters(new InputFilter[]{new InputFilter() {
             @Override
-            public CharSequence filter(CharSequence source, int start, int end, Spanned dest, int dstart, int dend) {
+            public CharSequence filter(CharSequence source, int start, int end,
+                                       Spanned dest, int destinationStart, int destinationEnd) {
                 // Token limit check
                 if (tokenLimit != -1 && objects.size() == tokenLimit) {
                     return "";
@@ -176,18 +176,19 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
 
                 //We need to not do anything when we would delete the prefix
-                if (dstart < prefix.length()) {
-                    //when settext is called, which should only be called during
-                    //restoring, dstart and dend are 0. If not checked, it will clear out the prefix.
-                    //this is why we need to return null in this if condition to preserve state.
-                    if (dstart == 0 && dend == 0) {
+                if (destinationStart < prefix.length()) {
+                    //when setText is called, which should only be called during restoring,
+                    //destinationStart and destinationEnd are 0. If not checked, it will clear out
+                    //the prefix.
+                    //This is why we need to return null in this if condition to preserve state.
+                    if (destinationStart == 0 && destinationEnd == 0) {
                         return null;
-                    } else if (dend <= prefix.length()) {
+                    } else if (destinationEnd <= prefix.length()) {
                         //Don't do anything
-                        return prefix.subSequence(dstart, dend);
+                        return prefix.subSequence(destinationStart, destinationEnd);
                     } else {
                         //Delete everything up to the prefix
-                        return prefix.subSequence(dstart, prefix.length());
+                        return prefix.subSequence(destinationStart, prefix.length());
                     }
                 }
                 return null;
@@ -258,7 +259,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     /**
-     * Set the listener that will be notified of changes in the Tokenlist
+     * Set the listener that will be notified of changes in the Token list
      *
      * @param l The TokenListener
      */
@@ -343,7 +344,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             System.arraycopy(splitChar, 0, fixed, 1, splitChar.length);
         }
         this.splitChar = fixed;
-        // Keep the tokenizer and splitchars in sync
+        // Keep the tokenizer and splitChars in sync
         this.setTokenizer(new CharacterTokenizer(splitChar));
     }
 
@@ -775,7 +776,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param hasFocus boolean indicating whether we have the focus or not.
      */
     public void performCollapse(boolean hasFocus) {
-        // Pause the spanwatcher
+        // Pause the spanWatcher
         focusChanging = true;
         if (!hasFocus) {
             Editable text = getText();
@@ -858,7 +859,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
             }
         }
-        // Start the spanwatcher
+        // Start the spanWatcher
         focusChanging = false;
     }
 
@@ -1056,7 +1057,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         Editable text = getText();
         if (text == null) return;
 
-        //If the spanwatcher has been removed, we need to also manually trigger onSpanRemoved
+        //If the spanWatcher has been removed, we need to also manually trigger onSpanRemoved
         TokenSpanWatcher[] spans = text.getSpans(0, text.length(), TokenSpanWatcher.class);
         if (spans.length == 0) {
             spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
@@ -1309,7 +1310,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
 
         @Override
-        public void onSpanChanged(Spannable text, Object what, int ostart, int oend, int nstart, int nend) {
+        public void onSpanChanged(Spannable text, Object what,
+                                  int oldStart, int oldEnd, int newStart, int newEnd) {
         }
     }
 
@@ -1320,7 +1322,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private class TokenTextWatcher implements TextWatcher {
         ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
 
-        protected void removeToken(TokenImageSpan token, Editable text) {
+        void removeToken(TokenImageSpan token, Editable text) {
             text.removeSpan(token);
         }
 
@@ -1413,7 +1415,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         //onSaveInstanceState, so remove them first
         removeListeners();
 
-        //ARGH! Apparently, saving the parent state on 2.3 mutates the spannable
+        //Apparently, saving the parent state on 2.3 mutates the spannable
         //prevent this mutation from triggering add or removes of token objects ~mgod
         savingState = true;
         Parcelable superState = super.onSaveInstanceState();
@@ -1440,6 +1442,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return state;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void onRestoreInstanceState(Parcelable state) {
         if (!(state instanceof SavedState)) {
@@ -1546,7 +1549,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param beforeLength the number of characters before the current selection end to check
      * @return true if there are no non-deletable pieces of the section
      */
-    @SuppressWarnings("unused")
     public boolean canDeleteSelection(int beforeLength) {
         if (objects.size() < 1) return true;
 
@@ -1587,7 +1589,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     private class TokenInputConnection extends InputConnectionWrapper {
 
-        public TokenInputConnection(InputConnection target, boolean mutable) {
+        TokenInputConnection(InputConnection target, boolean mutable) {
             super(target, mutable);
         }
 

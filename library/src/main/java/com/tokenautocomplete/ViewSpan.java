@@ -2,6 +2,7 @@ package com.tokenautocomplete;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.support.annotation.NonNull;
 import android.text.style.ReplacementSpan;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,7 +21,8 @@ public class ViewSpan extends ReplacementSpan {
         super();
         this.maxWidth = maxWidth;
         view = v;
-        view.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        view.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
     private void prepView() {
@@ -31,7 +33,8 @@ public class ViewSpan extends ReplacementSpan {
         view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
     }
 
-    public void draw(Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, Paint paint) {
+    public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end,
+                     float x, int top, int y, int bottom, @NonNull Paint paint) {
         prepView();
 
         canvas.save();
@@ -42,7 +45,7 @@ public class ViewSpan extends ReplacementSpan {
         canvas.restore();
     }
 
-    public int getSize(Paint paint, CharSequence charSequence, int i, int i2, Paint.FontMetricsInt fm) {
+    public int getSize(@NonNull Paint paint, CharSequence charSequence, int i, int i2, Paint.FontMetricsInt fm) {
         prepView();
 
         if (fm != null) {

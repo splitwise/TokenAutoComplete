@@ -9,8 +9,8 @@ import android.text.style.TextAppearanceSpan;
  * Created on 2/3/15.
  * @author mgod
  */
-public class HintSpan extends TextAppearanceSpan {
-    public HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
+class HintSpan extends TextAppearanceSpan {
+    HintSpan(String family, int style, int size, ColorStateList color, ColorStateList linkColor) {
         super(family, style, size, color, linkColor);
     }
 }

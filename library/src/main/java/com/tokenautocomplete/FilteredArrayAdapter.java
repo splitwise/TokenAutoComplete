@@ -1,6 +1,7 @@
 package com.tokenautocomplete;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.widget.ArrayAdapter;
 import android.widget.Filter;
 
@@ -47,7 +48,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      * @param objects The objects to represent in the ListView.
      */
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, T[] objects) {
-        this(context, resource, textViewResourceId, new ArrayList<T>(Arrays.asList(objects)));
+        this(context, resource, textViewResourceId, new ArrayList<>(Arrays.asList(objects)));
     }
 
     /**
@@ -73,7 +74,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      * @param objects The objects to represent in the ListView.
      */
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, List<T> objects) {
-        super(context, resource, textViewResourceId, new ArrayList<T>(objects));
+        super(context, resource, textViewResourceId, new ArrayList<>(objects));
         this.originalObjects = objects;
     }
 
@@ -92,7 +93,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
     }
 
     @Override
-    public Filter getFilter() {
+    public @NonNull Filter getFilter() {
         if (filter == null)
             filter = new AppFilter(originalObjects);
         return filter;
@@ -124,7 +125,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
         public void setSourceObjects(List<T> objects) {
             synchronized (this) {
-                sourceObjects = new ArrayList<T>(objects);
+                sourceObjects = new ArrayList<>(objects);
             }
         }
 
@@ -133,7 +134,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
             FilterResults result = new FilterResults();
             if (chars != null && chars.length() > 0) {
                 String mask = chars.toString();
-                ArrayList<T> keptObjects = new ArrayList<T>();
+                ArrayList<T> keptObjects = new ArrayList<>();
 
                 for (T object : sourceObjects) {
                     if (keepObject(object, mask))

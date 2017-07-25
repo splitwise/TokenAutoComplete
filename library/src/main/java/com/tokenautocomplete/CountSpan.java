@@ -11,10 +11,10 @@ import android.widget.TextView;
  * @author mgod
  */
 
-public class CountSpan extends ViewSpan {
-    public String text = "";
+class CountSpan extends ViewSpan {
+    String text = "";
 
-    public CountSpan(int count, Context ctx, int textColor, int textSize, int maxWidth) {
+    CountSpan(int count, Context ctx, int textColor, int textSize, int maxWidth) {
         super(new TextView(ctx), maxWidth);
         TextView v = (TextView)view;
         v.setTextColor(textColor);
@@ -22,7 +22,7 @@ public class CountSpan extends ViewSpan {
         setCount(count);
     }
 
-    public void setCount(int c) {
+    void setCount(int c) {
         text = "+" + c;
         ((TextView)view).setText(text);
     }

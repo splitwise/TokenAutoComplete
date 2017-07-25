@@ -55,7 +55,7 @@ For a basic token auto complete view, you'll need to
 
 ### Subclass TokenCompleteTextView
 
-You'll need to provide your own implementations for getViewForObject and defaultObject. You should return a view that displays the token from getViewForObject. In defaultObject, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
+You'll need to provide your own implementations for getViewForObject, defaultObject, and getParcelableClass. You should return a view that displays the token from getViewForObject. In defaultObject, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
 
 ```java
 public class ContactsCompletionView extends TokenCompleteTextView<Person> {
@@ -82,6 +82,11 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
         } else {
             return new Person(completionText.substring(0, index), completionText);
         }
+    }
+
+    @Override
+    protected Class<Person> getParcelableClass() {
+        return Person.class;
     }
 }
 ```
@@ -111,7 +116,7 @@ Token background drawable
 Person object code
 
 ```java
-public class Person implements Serializable {
+public class Person implements Parcelable {
     private String name;
     private String email;
 
@@ -122,10 +127,32 @@ public class Person implements Serializable {
 
     @Override
     public String toString() { return name; }
+
+    @Override
+    public int describeContents() { return 0; }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.name);
+        dest.writeString(this.email);
+    }
+
+    protected Person(Parcel in) {
+        this.name = in.readString();
+        this.email = in.readString();
+    }
+
+    public static final Parcelable.Creator<Person> CREATOR = new Parcelable.Creator<Person>() {
+        @Override
+        public Person createFromParcel(Parcel source) { return new Person(source); }
+
+        @Override
+        public Person[] newArray(int size) { return new Person[size]; }
+    };
 }
 ```
 
-Note that the class implements ```Serializable```. In order to restore the view state properly, the ```TokenCompleteTextView``` needs to be able to save and restore your objects from disk. If your objects cannot be made ```Serializable```, please look at [restoring the view state](#restoring-the-view-state).
+Note that the class implements ```Parcelable```. In order to restore the view state properly, the ```TokenCompleteTextView``` needs to be able to save and restore your objects.
 
 ### Create a layout and activity for your completion view
 
@@ -387,40 +414,7 @@ Tokens will be replaced with the toString value of the objects they represent wh
 Restoring the view state
 ========================
 
-If your token objects implement ```Serializable```, the ```TokenCompleteTextView``` will automatically handle ```onSaveInstanceState``` and ```onRestoreInstanceState```. If you cannot make your objects ```Serializable```, you should override ```getSerializableObjects``` and ```convertSerializableArrayToObjectArray```. ```getSerializableObjects``` should return an array of ```Serializable``` objects that can be used to rebuild your original objects when restoring the view state. ```convertSerializableArrayToObjectArray``` should take an array of ```Serializable``` objects and use them to rebuild your token objects.
-
-We use something similar to this at [splitwise](http://splitwise.com) to avoid saving complicated object graphs:
-
-```java
-@Override
-protected ArrayList<Object> convertSerializableArrayToObjectArray(ArrayList<Serializable> sers) {
-    ArrayList<Object> objs = new ArrayList<Object>();
-    for (Serializable s: sers) {
-        if (s instanceof Long) {
-            Contact c = Contact.loadFromDatabase((Long)s);
-            objs.add(c);
-        } else {
-            objs.add(s);
-        }
-    }
-
-    return objs;
-}
-
-@Override
-protected ArrayList<Serializable> getSerializableObjects() {
-    ArrayList<Serializable> s = new ArrayList<Serializable>();
-    for (Object obj: getObjects()) {
-        if (obj instanceof Serializable) {
-            s.add((Serializable)obj);
-        } else {
-            //obj is a Contact
-            s.add(((Contact)obj).getId());
-        }
-    }
-    return s;
-}
-```
+If your token objects implement ```Parcelable```, the ```TokenCompleteTextView``` will automatically handle ```onSaveInstanceState``` and ```onRestoreInstanceState```.
 
 Other options
 =============

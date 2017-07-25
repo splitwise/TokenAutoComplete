@@ -1386,14 +1386,20 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     protected ArrayList<Serializable> getSerializableObjects() {
         ArrayList<Serializable> serializables = new ArrayList<>();
+        boolean isSerializable = true;
         for (Object obj : getObjects()) {
             if (obj instanceof Serializable) {
                 serializables.add((Serializable) obj);
             } else {
+                isSerializable = false;
                 Log.e(TAG, "Unable to save '" + obj + "'");
             }
         }
-        if (serializables.size() != objects.size()) {
+        String currentCompletionText = currentCompletionText();
+        if (!TextUtils.isEmpty(currentCompletionText)) {
+            serializables.add(currentCompletionText);
+        }
+        if (!isSerializable) {
             String message = "You should make your objects Serializable or override\n" +
                     "getSerializableObjects and convertSerializableArrayToObjectArray";
             Log.e(TAG, message);
@@ -1465,7 +1471,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
         addListeners();
         for (T obj : convertSerializableArrayToObjectArray(ss.baseObjects)) {
-            addObject(obj);
+            if (obj instanceof String) {
+                getText().append((String) obj);
+            } else {
+                addObject(obj);
+            }
         }
 
         // Collapse the view if necessary

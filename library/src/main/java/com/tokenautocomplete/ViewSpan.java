@@ -39,8 +39,7 @@ public class ViewSpan extends ReplacementSpan {
 
         canvas.save();
         //Centering the token looks like a better strategy that aligning the bottom
-        int padding = (bottom - top - view.getBottom()) / 2;
-        canvas.translate(x, bottom - view.getBottom() - padding);
+        canvas.translate(x, top == 0 ? 6 : top);
         view.draw(canvas);
         canvas.restore();
     }

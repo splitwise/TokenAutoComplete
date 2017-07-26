@@ -42,6 +42,8 @@ import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 
 import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1384,8 +1386,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
     }
 
-    protected ArrayList<Serializable> getSerializableObjects() {
-        ArrayList<Serializable> serializables = new ArrayList<>();
+    protected List<Serializable> getSerializableObjects() {
+        List<Serializable> serializables = new ArrayList<>();
         for (Object obj : getObjects()) {
             if (obj instanceof Serializable) {
                 serializables.add((Serializable) obj);
@@ -1394,8 +1396,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
         }
         if (serializables.size() != objects.size()) {
-            String message = "You should make your objects Serializable or override\n" +
-                    "getSerializableObjects and convertSerializableArrayToObjectArray";
+            String message = "You should make your objects Serializable or Parcelable or\n" +
+                    "override getSerializableObjects and convertSerializableArrayToObjectArray";
             Log.e(TAG, message);
         }
 
@@ -1403,14 +1405,29 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     @SuppressWarnings("unchecked")
-    protected ArrayList<T> convertSerializableArrayToObjectArray(ArrayList<Serializable> s) {
-        return (ArrayList<T>) (ArrayList) s;
+    protected List<T> convertSerializableObjectsToTypedObjects(List s) {
+        return (List<T>) s;
+    }
+
+    //Used to determine if we can use the Parcelable interface
+    private Class reifyParameterizedTypeClass() {
+        //Borrowed from http://codyaray.com/2013/01/finding-generic-type-parameters-with-guava
+
+        //Figure out what class of objects we have
+        Class<?> viewClass = getClass();
+        while (!viewClass.getSuperclass().equals(TokenCompleteTextView.class)) {
+            viewClass = viewClass.getSuperclass();
+        }
+
+        // This operation is safe. Because viewClass is a direct sub-class, getGenericSuperclass() will
+        // always return the Type of this class. Because this class is parameterized, the cast is safe
+        ParameterizedType superclass = (ParameterizedType) viewClass.getGenericSuperclass();
+        Type type = superclass.getActualTypeArguments()[0];
+        return (Class)type;
     }
 
     @Override
     public Parcelable onSaveInstanceState() {
-        ArrayList<Serializable> baseObjects = getSerializableObjects();
-
         //We don't want to save the listeners as part of the parent
         //onSaveInstanceState, so remove them first
         removeListeners();
@@ -1428,7 +1445,16 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         state.performBestGuess = performBestGuess;
         state.tokenClickStyle = tokenClickStyle;
         state.tokenDeleteStyle = deletionStyle;
-        state.baseObjects = baseObjects;
+        Class parameterizedClass = reifyParameterizedTypeClass();
+        //Our core array is Parcelable, so use that interface
+        if (Parcelable.class.isAssignableFrom(parameterizedClass)) {
+            state.parcelableClassName = parameterizedClass.getName();
+            state.baseObjects = getObjects();
+        } else {
+            //Fallback on Serializable
+            state.parcelableClassName = SavedState.SERIALIZABLE_PLACEHOLDER;
+            state.baseObjects = getSerializableObjects();
+        }
         state.splitChar = splitChar;
 
         //So, when the screen is locked or some other system event pauses execution,
@@ -1462,9 +1488,16 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         tokenClickStyle = ss.tokenClickStyle;
         deletionStyle = ss.tokenDeleteStyle;
         splitChar = ss.splitChar;
-
         addListeners();
-        for (T obj : convertSerializableArrayToObjectArray(ss.baseObjects)) {
+
+        List<T> objects;
+        if (SavedState.SERIALIZABLE_PLACEHOLDER.equals(ss.parcelableClassName)) {
+            objects = convertSerializableObjectsToTypedObjects(ss.baseObjects);
+        } else {
+            objects = (List<T>)ss.baseObjects;
+        }
+
+        for (T obj: objects) {
             addObject(obj);
         }
 
@@ -1484,13 +1517,16 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * Handle saving the token state
      */
     private static class SavedState extends BaseSavedState {
+        static final String SERIALIZABLE_PLACEHOLDER = "Serializable";
+
         CharSequence prefix;
         boolean allowCollapse;
         boolean allowDuplicates;
         boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
         TokenDeleteStyle tokenDeleteStyle;
-        ArrayList<Serializable> baseObjects;
+        String parcelableClassName;
+        List<?> baseObjects;
         char[] splitChar;
 
         @SuppressWarnings("unchecked")
@@ -1502,7 +1538,18 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
-            baseObjects = (ArrayList<Serializable>) in.readSerializable();
+            parcelableClassName = in.readString();
+            if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
+                baseObjects = (ArrayList)in.readSerializable();
+            } else {
+                try {
+                    ClassLoader loader = Class.forName(parcelableClassName).getClassLoader();
+                    baseObjects = in.readArrayList(loader);
+                } catch (ClassNotFoundException ex) {
+                    //This should really never happen, class had to be available to get here
+                    throw new RuntimeException(ex);
+                }
+            }
             splitChar = in.createCharArray();
         }
 
@@ -1519,7 +1566,13 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             out.writeInt(tokenDeleteStyle.ordinal());
-            out.writeSerializable(baseObjects);
+            if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
+                out.writeString(SERIALIZABLE_PLACEHOLDER);
+                out.writeSerializable((Serializable)baseObjects);
+            } else {
+                out.writeString(parcelableClassName);
+                out.writeList(baseObjects);
+            }
             out.writeCharArray(splitChar);
         }
 

@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.AppCompatMultiAutoCompleteTextView;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -56,7 +57,8 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView implements TextView.OnEditorActionListener {
+public abstract class TokenCompleteTextView<T> extends AppCompatMultiAutoCompleteTextView
+        implements TextView.OnEditorActionListener {
     //Logging
     public static final String TAG = "TokenAutoComplete";
 
@@ -544,7 +546,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         int start = getCorrectedTokenBeginning(end);
 
         //Some keyboards add extra spaces when doing corrections, so
-        return TextUtils.substring(editable, start, end);
+        return TextUtils.substring(editable, start, end).trim();
     }
 
     protected float maxTextWidth() {
@@ -691,6 +693,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     @Override
     public boolean onTouchEvent(@NonNull MotionEvent event) {
+        if (!hasFocus()) {
+            requestFocus();
+        }
         int action = event.getActionMasked();
         Editable text = getText();
         boolean handled = false;
@@ -920,7 +925,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         clearComposingText();
 
         // Don't build a token for an empty String
-        if (selectedObject == null || selectedObject.toString().equals("")) return;
+        if (selectedObject == null
+                || selectedObject.toString() == null
+                || selectedObject.toString().trim().isEmpty()) {
+            return;
+        }
 
         SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);

@@ -943,6 +943,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 editable.replace(start, end, "");
             } else if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
                 editable.replace(start, end, "");
+                if (listener != null) {
+                    listener.onDuplicateRemoved(tokenSpan.getToken());
+                }
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);
                 editable.replace(start, end, ssb);
@@ -972,7 +975,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             @Override
             public void run() {
                 if (object == null) return;
-                if (!allowDuplicates && objects.contains(object)) return;
+                if (!allowDuplicates && objects.contains(object)) {
+                    if (listener != null) {
+                        listener.onDuplicateRemoved(object);
+                    }
+                    return;
+                }
                 if (tokenLimit != -1 && objects.size() == tokenLimit) return;
                 insertSpan(object, sourceText);
                 if (getText() != null && isFocused()) setSelection(getText().length());
@@ -1278,9 +1286,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     public interface TokenListener<T> {
-        void onTokenAdded(T token);
 
+        void onTokenAdded(T token);
         void onTokenRemoved(T token);
+        void onDuplicateRemoved(T token);
     }
 
     private class TokenSpanWatcher implements SpanWatcher {

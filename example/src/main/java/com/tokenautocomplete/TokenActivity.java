@@ -112,4 +112,8 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
         ((TextView)findViewById(R.id.lastEvent)).setText("Removed: " + token);
         updateTokenConfirmation();
     }
+
+    @Override
+    public void onDuplicateRemoved(Person token) {
+    }
 }

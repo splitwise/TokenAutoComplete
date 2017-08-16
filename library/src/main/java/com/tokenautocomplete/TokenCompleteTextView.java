@@ -1480,12 +1480,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         super.onRestoreInstanceState(ss.getSuperState());
 
         char sentinel = splitChar[0];
-        String superStateText = getText().toString();
-        String uncompletedTag =
-                superStateText.substring(superStateText.lastIndexOf(sentinel) + 1).trim();
+        String text = getText().toString();
+        String uncompletedToken = text.substring(text.lastIndexOf(sentinel) + 1).trim();
+
         setText(ss.prefix);
         prefix = ss.prefix;
-
         updateHint();
         allowCollapse = ss.allowCollapse;
         allowDuplicates = ss.allowDuplicates;
@@ -1503,8 +1502,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
 
         for (T obj: objects) {
-            if (uncompletedTag.equals(obj.toString())) {
-                setText(obj.toString());
+            CharSequence token = obj.toString();
+            if (uncompletedToken.equals(token)) {
+                getText().append(token);
+                setSelection(token.length());
             } else {
                 addObject(obj);
             }

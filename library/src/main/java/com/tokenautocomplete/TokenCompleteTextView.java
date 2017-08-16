@@ -106,6 +106,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
+    private boolean completeOnFocusLost = true;
 
     private int tokenLimit = -1;
 
@@ -418,6 +419,20 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     /**
+     * Set whether we should try to complete any unfinished tokens when the view loses focus. If the
+     * current text is a valid email string, a new token is generated regardless of the value of
+     * this variable.
+     *
+     * @param completeOnFocusLost true if it should complete any unfinished tokens after losing
+     *                            focus, othewise leave the remaining text as is.
+     */
+    @SuppressWarnings("unused")
+    public void completeOnFocusLost(boolean completeOnFocusLost) {
+        this.completeOnFocusLost = completeOnFocusLost;
+    }
+
+    /**
+    /**
      * A token view for the object
      *
      * @param object the object selected by the user from the list
@@ -433,6 +448,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @return a best guess for what the user meant to complete
      */
     abstract protected T defaultObject(String completionText);
+
+    private boolean isValidEmail(String emailString) {
+       return android.util.Patterns.EMAIL_ADDRESS.matcher(emailString).matches();
+    }
 
     /**
      * Correctly build accessibility string for token contents
@@ -870,7 +889,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         super.onFocusChanged(hasFocus, direction, previous);
 
         // See if the user left any unfinished tokens and finish them
-        if (!hasFocus) performCompletion();
+        boolean shouldCompleteOnFocusLost = completeOnFocusLost
+                                            || isValidEmail(currentCompletionText());
+        if (shouldCompleteOnFocusLost && !hasFocus) performCompletion();
 
         // Clear sections when focus changes to avoid a token remaining selected
         clearSelections();

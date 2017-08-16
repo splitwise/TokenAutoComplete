@@ -449,6 +449,10 @@ setThreshold(1);
 ```java
 setTokenLimit(10);
 ```
+* Turn off completing unfinished tokens when the view loses focus
+```java
+completeOnFocusLost(false);
+```
 * Prevent specific tokens from being deleted by overriding ```isTokenRemovable``` on your completion view
 
 

@@ -78,24 +78,11 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
         this.originalObjects = objects;
     }
 
-    @SuppressWarnings("unchecked")
+    @NonNull 
     @Override
-    public void notifyDataSetChanged() {
-        ((AppFilter)getFilter()).setSourceObjects(this.originalObjects);
-        super.notifyDataSetChanged();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public void notifyDataSetInvalidated(){
-        ((AppFilter)getFilter()).setSourceObjects(this.originalObjects);
-        super.notifyDataSetInvalidated();
-    }
-
-    @Override
-    public @NonNull Filter getFilter() {
+    public Filter getFilter() {
         if (filter == null)
-            filter = new AppFilter(originalObjects);
+            filter = new AppFilter();
         return filter;
     }
 
@@ -117,20 +104,10 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      */
     private class AppFilter extends Filter {
 
-        private ArrayList<T> sourceObjects;
-
-        public AppFilter(List<T> objects) {
-            setSourceObjects(objects);
-        }
-
-        public void setSourceObjects(List<T> objects) {
-            synchronized (this) {
-                sourceObjects = new ArrayList<>(objects);
-            }
-        }
-
         @Override
         protected FilterResults performFiltering(CharSequence chars) {
+            ArrayList<T> sourceObjects = new ArrayList<T>(originalObjects);
+
             FilterResults result = new FilterResults();
             if (chars != null && chars.length() > 0) {
                 String mask = chars.toString();

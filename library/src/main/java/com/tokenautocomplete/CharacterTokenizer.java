@@ -28,7 +28,7 @@ public class CharacterTokenizer implements MultiAutoCompleteTextView.Tokenizer {
         while (i > 0 && !splitChar.contains(text.charAt(i - 1))) {
             i--;
         }
-        while (i < cursor && text.charAt(i) == ' ') {
+        while (i > 0 && text.charAt(i) == ' ') {
             i++;
         }
 

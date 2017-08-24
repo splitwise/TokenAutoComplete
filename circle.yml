@@ -1,0 +1,12 @@
+checkout:
+  post:  
+    - cp -r .circleci/licenses/. $ANDROID_HOME/licenses
+
+machine:
+  java:
+    version:
+      oraclejdk8
+
+test:
+  override:
+    - ./gradlew test

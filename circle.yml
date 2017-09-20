@@ -1,5 +1,5 @@
 checkout:
-  post:  
+  post:
     - cp -r .circleci/licenses/. $ANDROID_HOME/licenses
 
 machine:
@@ -8,5 +8,11 @@ machine:
       oraclejdk8
 
 test:
+  pre:
+    - emulator -avd circleci-android24 -no-window:
+        background: true
+        parallel: true
   override:
     - ./gradlew test
+    - circle-android wait-for-boot
+    - ./gradlew connectedAndroidTest

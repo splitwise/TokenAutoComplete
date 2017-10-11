@@ -795,8 +795,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     lastPosition++;
                     CountSpan cs = new CountSpan(count, getContext(), getCurrentTextColor(),
                             (int) getTextSize(), (int) maxTextWidth());
-                    text.insert(lastPosition, cs.text);
-
+                    try {
+                        text.insert(lastPosition, cs.text);
+                    } catch (IndexOutOfBoundsException ignored) {
+                        Log.d(TAG, "extractText hit IndexOutOfBoundsException. This may be normal.", ignored);
+                    }
                     float newWidth = Layout.getDesiredWidth(text, 0,
                             lastPosition + cs.text.length(), lastLayout.getPaint());
                     //If the +x span will be moved off screen, move it one token in
@@ -811,7 +814,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                             lastPosition = prefix.length();
                         }
 
-                        text.insert(lastPosition, cs.text);
+                        try {
+                            text.insert(lastPosition, cs.text);
+                        } catch (IndexOutOfBoundsException ignored) {
+                            Log.d(TAG, "extractText hit IndexOutOfBoundsException. This may be normal.", ignored);
+                        }
                     }
 
                     text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1336,7 +1343,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 int end = start + count;
 
                 //If we're deleting a space, we want spans from 1 character before this start
-                if (text.charAt(start) == ' ') {
+                if ((text.length() >= (start + 1)) && text.charAt(start) == ' ') {
                     start -= 1;
                 }
 

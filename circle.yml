@@ -5,10 +5,16 @@ machine:
 
 dependencies:
   pre:
-    # Android SDK Build-tools, revision 25.0.3, makes sure we've accepted the license
-    - if [ ! -d "/usr/local/android-sdk-linux/build-tools/25.0.3" ]; then echo y | android update sdk --no-ui --all --filter "build-tools-25.0.3"; fi
+    # Android SDK Build-tools, revision 26.0.2, makes sure we've accepted the license
+    - if [ ! -d "/usr/local/android-sdk-linux/build-tools/26.0.2" ]; then echo y | android update
+     sdk --no-ui --all --filter "build-tools-26.0.2"; fi
+    # Android SDK 26
+    - if [ ! -d "/usr/local/android-sdk-linux/platforms/android-26" ]; then echo y | android update
+     sdk --no-ui --all --filter "android-26"; fi
+
   cache_directories:
-    - /usr/local/android-sdk-linux/build-tools/25.0.3
+    - /usr/local/android-sdk-linux/build-tools/26.0.2
+    - /usr/local/android-sdk-linux/platforms/android-26
   post:
     - emulator -avd circleci-android22 -no-window:
         background: true

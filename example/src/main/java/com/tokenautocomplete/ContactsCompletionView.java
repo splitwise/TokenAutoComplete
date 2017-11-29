@@ -2,10 +2,13 @@ package com.tokenautocomplete;
 
 import android.app.Activity;
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -16,6 +19,8 @@ import android.widget.TextView;
  * @author mgod
  */
 public class ContactsCompletionView extends TokenCompleteTextView<Person> {
+
+    InputConnection testAccessibleInputConnection;
 
     public ContactsCompletionView(Context context) {
         super(context);
@@ -46,5 +51,11 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
         } else {
             return new Person(completionText.substring(0, index), completionText);
         }
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
+        testAccessibleInputConnection = super.onCreateInputConnection(outAttrs);
+        return testAccessibleInputConnection;
     }
 }

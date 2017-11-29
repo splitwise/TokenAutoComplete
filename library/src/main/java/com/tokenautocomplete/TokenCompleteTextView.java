@@ -317,6 +317,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param prefix prefix
      * @param color A single color value in the form 0xAARRGGBB.
      */
+    @SuppressWarnings("SameParameterValue")
     public void setPrefix(CharSequence prefix, int color) {
         SpannableString spannablePrefix = new SpannableString(prefix);
         spannablePrefix.setSpan(new ForegroundColorSpan(color), 0, spannablePrefix.length(), 0);
@@ -630,7 +631,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         // Hide the keyboard
         InputMethodManager imm = (InputMethodManager) getContext().getSystemService(
                 Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(getWindowToken(), 0);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(getWindowToken(), 0);
+        }
     }
 
     @Override
@@ -663,6 +666,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         return handled || super.onKeyDown(keyCode, event);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private boolean deleteSelectedObject(boolean handled) {
         if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
             Editable text = getText();
@@ -974,6 +978,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * @param object     the object to add to the displayed tokens
      * @param sourceText the text used if this object is deleted
      */
+    @SuppressWarnings("SameParameterValue")
     public void addObject(final T object, final CharSequence sourceText) {
         post(new Runnable() {
             @Override
@@ -1240,15 +1245,18 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     protected class TokenImageSpan extends ViewSpan implements NoCopySpan {
         private T token;
 
+        @SuppressWarnings("WeakerAccess")
         public TokenImageSpan(View d, T token, int maxWidth) {
             super(d, maxWidth);
             this.token = token;
         }
 
+        @SuppressWarnings("WeakerAccess")
         public T getToken() {
             return this.token;
         }
 
+        @SuppressWarnings("WeakerAccess")
         public void onClick() {
             Editable text = getText();
             if (text == null) return;

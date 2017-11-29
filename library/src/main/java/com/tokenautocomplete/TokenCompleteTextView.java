@@ -155,8 +155,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         setTextIsSelectable(false);
         setLongClickable(false);
 
-        //In theory, get the soft keyboard to not supply suggestions. very unreliable < API 11
-        setInputType(getInputType() | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
+        //In theory, get the soft keyboard to not supply suggestions. very unreliable
+        setInputType(getInputType() |
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS |
+                InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
         setHorizontallyScrolling(false);
 
         // Listen to IME action keys
@@ -170,7 +172,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 // Token limit check
                 if (tokenLimit != -1 && objects.size() == tokenLimit) {
                     return "";
-                } else if (source.length() == 1) {//Detect split characters, remove them and complete the current token instead
+                } else if (source.length() == 1) {
+                    //Detect split characters, remove them and complete the current token instead
                     if (isSplitChar(source.charAt(0))) {
                         performCompletion();
                         return "";
@@ -1675,6 +1678,21 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
 
             return super.deleteSurroundingText(beforeLength, afterLength);
+        }
+
+        @Override
+        public boolean setComposingText(CharSequence text, int newCursorPosition) {
+            //There's an issue with some keyboards where they will try to insert the first word
+            //of the prefix as the composing text
+            CharSequence hint = getHint();
+            if (hint != null) {
+                String firstWord = hint.toString().trim().split(" ")[0];
+                if (firstWord.length() > 0 && firstWord.equals(text)) {
+                    text = ""; //It was trying to use th hint, so clear that text
+                }
+            }
+
+            return super.setComposingText(text, newCursorPosition);
         }
     }
 }

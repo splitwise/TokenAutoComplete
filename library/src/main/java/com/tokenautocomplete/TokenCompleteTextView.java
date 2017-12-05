@@ -109,6 +109,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
     private int tokenLimit = -1;
 
+    private transient String lastCompletionText = null;
+
     /**
      * Add the TextChangedListeners
      */
@@ -172,9 +174,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 // Token limit check
                 if (tokenLimit != -1 && objects.size() == tokenLimit) {
                     return "";
-                } else if (source.length() == 1) {
+                } else if (source.toString().trim().length() == 1) {
                     //Detect split characters, remove them and complete the current token instead
-                    if (isSplitChar(source.charAt(0))) {
+                    if (isSplitChar(source.toString().trim().charAt(0))) {
                         performCompletion();
                         return "";
                     }
@@ -948,6 +950,11 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
 
         String original = TextUtils.substring(editable, start, end);
 
+        //Keep track of  replacements for a bug workaround
+        if (original.length() > 0) {
+            lastCompletionText = original;
+        }
+
         if (editable != null) {
             if (tokenSpan == null) {
                 editable.replace(start, end, "");
@@ -1682,6 +1689,14 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 if (firstWord.length() > 0 && firstWord.equals(text)) {
                     text = ""; //It was trying to use th hint, so clear that text
                 }
+            }
+
+            //Also, some keyboards don't correctly respect the replacement if the replacement
+            //is the same number of characters as the replacement span (",, "), so 3 letters
+            //We need to ignore this value if it's available
+            if (lastCompletionText != null && text.length() == lastCompletionText.length() + 1 &&
+                    text.toString().startsWith(lastCompletionText)) {
+                text = text.subSequence(text.length() - 1, text.length());
             }
 
             return super.setComposingText(text, newCursorPosition);

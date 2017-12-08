@@ -1053,6 +1053,46 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     /**
+     * Remove all objects from the token list then clear all stray non-tokenized text from the view.
+     */
+    public void clearTextAndTokens() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                //To make sure all the appropriate callbacks happen, we just want to piggyback on the
+                //existing code that handles deleting spans when the text changes
+                Editable text = getText();
+                if (text == null) {
+                    return;
+                }
+
+                // Remove all hidden tokens
+                ArrayList<TokenImageSpan> toRemove = new ArrayList<>();
+                for (TokenImageSpan span : hiddenSpans) {
+                    toRemove.add(span);
+                }
+                for (TokenImageSpan span : toRemove) {
+                    hiddenSpans.remove(span);
+                    // Remove it from the state and fire the callback
+                    spanWatcher.onSpanRemoved(text, span, 0, 0);
+                }
+
+                updateCountSpan();
+
+                // Then remove all visible tokens
+                TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+                for (TokenImageSpan span : spans) {
+                    removeSpan(span);
+                }
+
+                // Finally clear any stray non-tokenized text
+                Parcelable state = TokenCompleteTextView.this.onSaveInstanceState();
+                TokenCompleteTextView.this.onRestoreInstanceState(state);
+            }
+        });
+    }
+    
+    /**
      * Set the count span the current number of hidden objects
      */
     private void updateCountSpan() {

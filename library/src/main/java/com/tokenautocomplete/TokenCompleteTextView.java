@@ -65,7 +65,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         _Parent, //...do the parent behavior, not recommended
         Clear, //...clear the underlying text
         PartialCompletion, //...return the original text used for completion
-        ToString //...replace the token with toString of the token object
+        ToString, //...replace the token with toString of the token object
+        SelectThenDelete //...first backspace selects the token and another backspace deletes it
     }
 
     //When the user clicks on a token...
@@ -903,6 +904,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         //if the token gets deleted, this text will get put in the field instead
         switch (deletionStyle) {
             case Clear:
+            case SelectThenDelete:
                 return "";
             case PartialCompletion:
                 return currentCompletionText();
@@ -1655,7 +1657,23 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             int endTokenSelection = text.getSpanEnd(span);
 
             // moving on, no need to check this token
-            if (isTokenRemovable(span.token)) continue;
+            if (isTokenRemovable(span.token)) {
+                if (deletionStyle == TokenDeleteStyle.SelectThenDelete) {
+                    if (span.view.isSelected()) {
+                        // If a token is already selected then we can just delete it
+                        return true;
+                    }
+                    // If we're not selecting multiple characters and we want to remove the current token
+                    if (startSelection == endSelection && endTokenSelection + 1 == endSelection && !span.view.isSelected()) {
+                        // Just select it and don't delete it, the next backspace will delete it
+                        clearSelections();
+                        span.view.setSelected(true);
+                        invalidate();
+                        return false;
+                    }
+                }
+                continue;
+            }
 
             if (startSelection == endSelection) {
                 // Delete single
@@ -1690,10 +1708,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             //Shouldn't be able to delete prefix, so don't do anything
             if (getSelectionStart() <= prefix.length()) {
                 beforeLength = 0;
-                return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
             }
-
-            return super.deleteSurroundingText(beforeLength, afterLength);
+            return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
         }
 
         @Override

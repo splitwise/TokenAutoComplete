@@ -60,14 +60,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     //Logging
     public static final String TAG = "TokenAutoComplete";
 
-    //When the token is deleted...
-    public enum TokenDeleteStyle {
-        _Parent, //...do the parent behavior, not recommended
-        Clear, //...clear the underlying text
-        PartialCompletion, //...return the original text used for completion
-        ToString //...replace the token with toString of the token object
-    }
-
     //When the user clicks on a token...
     public enum TokenClickStyle {
         None(false), //...do nothing, but make sure the cursor is not in the token
@@ -94,7 +86,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     private TokenTextWatcher textWatcher;
     private ArrayList<T> objects;
     private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
-    private TokenDeleteStyle deletionStyle = TokenDeleteStyle._Parent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private CharSequence prefix = "";
     private boolean hintVisible = false;
@@ -202,9 +193,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             }
         }});
 
-        //We had _Parent style during initialization to handle an edge case in the parent
-        //now we can switch to Clear, usually the best choice
-        setDeletionStyle(TokenDeleteStyle.Clear);
         initialized = true;
     }
 
@@ -244,15 +232,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     public void setTokenizer(Tokenizer t) {
         super.setTokenizer(t);
         tokenizer = t;
-    }
-
-    /**
-     * Set the action to be taken when a Token is removed
-     *
-     * @param dStyle The TokenDeleteStyle
-     */
-    public void setDeletionStyle(TokenDeleteStyle dStyle) {
-        deletionStyle = dStyle;
     }
 
     /**
@@ -436,7 +415,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * list
      *
      * @param completionText the current text we are completing against
-     * @return a best guess for what the user meant to complete
+     * @return a best guess for what the user meant to complete or null if you don't want a guess
      */
     abstract protected T defaultObject(String completionText);
 
@@ -664,29 +643,27 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
                 break;
             case KeyEvent.KEYCODE_DEL:
-                handled = !canDeleteSelection(1) || deleteSelectedObject(false);
+                handled = !canDeleteSelection(1) || deleteSelectedObject();
                 break;
         }
 
         return handled || super.onKeyDown(keyCode, event);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private boolean deleteSelectedObject(boolean handled) {
+    private boolean deleteSelectedObject() {
         if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
             Editable text = getText();
-            if (text == null) return handled;
+            if (text == null) return false;
 
             TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
             for (TokenImageSpan span : spans) {
                 if (span.view.isSelected()) {
                     removeSpan(span);
-                    handled = true;
-                    break;
+                    return true;
                 }
             }
         }
-        return handled;
+        return false;
     }
 
     @Override
@@ -899,28 +876,15 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     @Override
     protected CharSequence convertSelectionToString(Object object) {
         selectedObject = (T) object;
-
-        //if the token gets deleted, this text will get put in the field instead
-        switch (deletionStyle) {
-            case Clear:
-                return "";
-            case PartialCompletion:
-                return currentCompletionText();
-            case ToString:
-                return object != null ? object.toString() : "";
-            case _Parent:
-            default:
-                return super.convertSelectionToString(object);
-
-        }
+        return initialized ? "" : super.convertSelectionToString(object);
     }
 
-    private SpannableStringBuilder buildSpannableForText(CharSequence text) {
+    private SpannableStringBuilder buildTokenSpannable() {
         //Add a sentinel , at the beginning so the user can remove an inner token and keep auto-completing
         //This is a hack to work around the fact that the tokenizer cannot directly detect spans
         //We don't want a space as the sentinel, and splitChar[0] is guaranteed to be something non-space
         char sentinel = splitChar[0];
-        return new SpannableStringBuilder(String.valueOf(sentinel) + tokenizer.terminateToken(text));
+        return new SpannableStringBuilder(String.valueOf(sentinel) + tokenizer.terminateToken(""));
     }
 
     protected TokenImageSpan buildSpanForObject(T obj) {
@@ -932,13 +896,12 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
     }
 
     @Override
-    protected void replaceText(CharSequence text) {
+    protected void replaceText(CharSequence ignore) {
         clearComposingText();
 
         // Don't build a token for an empty String
         if (selectedObject == null || selectedObject.toString().equals("")) return;
 
-        SpannableStringBuilder ssb = buildSpannableForText(text);
         TokenImageSpan tokenSpan = buildSpanForObject(selectedObject);
 
         Editable editable = getText();
@@ -969,6 +932,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                 }
             } else {
                 QwertyKeyListener.markAsReplaced(editable, start, end, original);
+                SpannableStringBuilder ssb = buildTokenSpannable();
                 editable.replace(start, end, ssb);
                 editable.setSpan(tokenSpan, start, start + ssb.length() - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
@@ -989,10 +953,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * Append a token object to the object list
      *
      * @param object     the object to add to the displayed tokens
-     * @param sourceText the text used if this object is deleted
      */
-    @SuppressWarnings("SameParameterValue")
-    public void addObject(final T object, final CharSequence sourceText) {
+    public void addObject(final T object) {
         post(new Runnable() {
             @Override
             public void run() {
@@ -1004,19 +966,10 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
                     return;
                 }
                 if (tokenLimit != -1 && objects.size() == tokenLimit) return;
-                insertSpan(object, sourceText);
+                insertSpan(object);
                 if (getText() != null && isFocused()) setSelection(getText().length());
             }
         });
-    }
-
-    /**
-     * Shorthand for addObject(object, "")
-     *
-     * @param object the object to add to the displayed token
-     */
-    public void addObject(T object) {
-        addObject(object, "");
     }
 
     /**
@@ -1107,10 +1060,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
      * Insert a new span for an Object
      *
      * @param object     Object to create a span for
-     * @param sourceText CharSequence to show when the span is removed
      */
-    private void insertSpan(T object, CharSequence sourceText) {
-        SpannableStringBuilder ssb = buildSpannableForText(sourceText);
+    private void insertSpan(T object) {
+        SpannableStringBuilder ssb = buildTokenSpannable();
         TokenImageSpan tokenSpan = buildSpanForObject(object);
 
         Editable editable = getText();
@@ -1149,18 +1101,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
             updateCountSpan();
         }
-    }
-
-    private void insertSpan(T object) {
-        String spanString;
-        // The information about the original text is lost here, so other than "toString" we have no data
-        if (deletionStyle == TokenDeleteStyle.ToString) {
-            spanString = object != null ? object.toString() : "";
-        } else {
-            spanString = "";
-        }
-
-        insertSpan(object, spanString);
     }
 
     private void insertSpan(TokenImageSpan span) {
@@ -1478,7 +1418,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         state.allowDuplicates = allowDuplicates;
         state.performBestGuess = performBestGuess;
         state.tokenClickStyle = tokenClickStyle;
-        state.tokenDeleteStyle = deletionStyle;
         Class parameterizedClass = reifyParameterizedTypeClass();
         //Our core array is Parcelable, so use that interface
         if (Parcelable.class.isAssignableFrom(parameterizedClass)) {
@@ -1520,7 +1459,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         allowDuplicates = ss.allowDuplicates;
         performBestGuess = ss.performBestGuess;
         tokenClickStyle = ss.tokenClickStyle;
-        deletionStyle = ss.tokenDeleteStyle;
         splitChar = ss.splitChar;
         addListeners();
 
@@ -1558,7 +1496,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         boolean allowDuplicates;
         boolean performBestGuess;
         TokenClickStyle tokenClickStyle;
-        TokenDeleteStyle tokenDeleteStyle;
         String parcelableClassName;
         List<?> baseObjects;
         char[] splitChar;
@@ -1571,7 +1508,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             allowDuplicates = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
-            tokenDeleteStyle = TokenDeleteStyle.values()[in.readInt()];
             parcelableClassName = in.readString();
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
                 baseObjects = (ArrayList)in.readSerializable();
@@ -1599,7 +1535,6 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             out.writeInt(allowDuplicates ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
-            out.writeInt(tokenDeleteStyle.ordinal());
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
                 out.writeString(SERIALIZABLE_PLACEHOLDER);
                 out.writeSerializable((Serializable)baseObjects);
@@ -1690,7 +1625,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             //Shouldn't be able to delete prefix, so don't do anything
             if (getSelectionStart() <= prefix.length()) {
                 beforeLength = 0;
-                return deleteSelectedObject(false) || super.deleteSurroundingText(beforeLength, afterLength);
+                return deleteSelectedObject() || super.deleteSurroundingText(beforeLength, afterLength);
             }
 
             return super.deleteSurroundingText(beforeLength, afterLength);

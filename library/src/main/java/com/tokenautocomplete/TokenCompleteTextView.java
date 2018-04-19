@@ -332,7 +332,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         }
         this.splitChar = fixed;
         // Keep the tokenizer and splitChars in sync
-        this.setTokenizer(new CharacterTokenizer(splitChar));
+        this.setTokenizer(new CharacterTokenizer(this.splitChar));
     }
 
     /**

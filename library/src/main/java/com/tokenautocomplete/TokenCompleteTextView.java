@@ -65,6 +65,7 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
         None(false), //...do nothing, but make sure the cursor is not in the token
         Delete(false),//...delete the token
         Select(true),//...select the token. A second click will delete it.
+        CustomClick(true), //...call custom click behavior
         SelectDeselect(true);
 
         private boolean mIsSelectable = false;
@@ -685,7 +686,8 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             handled = super.onTouchEvent(event);
         }
 
-        if (isFocused() && text != null && lastLayout != null && action == MotionEvent.ACTION_UP) {
+        if ((tokenClickStyle == TokenClickStyle.CustomClick || isFocused())
+            && text != null && lastLayout != null && action == MotionEvent.ACTION_UP) {
 
             int offset = getOffsetForPosition(event.getX(), event.getY());
 
@@ -1220,6 +1222,9 @@ public abstract class TokenCompleteTextView<T> extends MultiAutoCompleteTextView
             if (text == null) return;
 
             switch (tokenClickStyle) {
+                case CustomClick:
+                    view.callOnClick();
+                    break;
                 case Select:
                 case SelectDeselect:
 

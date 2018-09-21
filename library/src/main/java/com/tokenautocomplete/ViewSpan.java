@@ -20,6 +20,7 @@ public class ViewSpan extends ReplacementSpan {
     private int maxWidth;
     private boolean prepared;
 
+    @SuppressWarnings("WeakerAccess")
     public ViewSpan(View view, int maxWidth) {
         super();
         this.maxWidth = maxWidth;

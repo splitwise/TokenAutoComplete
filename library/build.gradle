@@ -2,7 +2,6 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
-    buildToolsVersion project.ANDROID_BUILD_TOOLS_VERSION
 
     defaultConfig {
         minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
@@ -30,9 +29,10 @@ task jar(type: Jar) {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.12'
 
-    compile "com.android.support:support-annotations:$project.ANDROID_BUILD_TOOLS_VERSION"
+    implementation "com.android.support:support-annotations:$project.ANDROID_SUPPORT_VERSION"
+    implementation "com.android.support:appcompat-v7:$project.ANDROID_SUPPORT_VERSION"
 }
 
 apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'

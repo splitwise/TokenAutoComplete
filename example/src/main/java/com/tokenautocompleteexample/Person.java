@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.os.Parcel;
 import android.os.Parcelable;

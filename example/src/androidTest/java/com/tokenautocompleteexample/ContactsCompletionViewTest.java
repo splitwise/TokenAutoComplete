@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
@@ -12,8 +12,8 @@ import static android.support.test.espresso.action.ViewActions.typeText;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
-import static com.tokenautocomplete.TokenMatchers.emailForPerson;
-import static com.tokenautocomplete.TokenMatchers.tokenCount;
+import static com.tokenautocompleteexample.TokenMatchers.emailForPerson;
+import static com.tokenautocompleteexample.TokenMatchers.tokenCount;
 import static org.hamcrest.Matchers.is;
 
 /**

@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.support.test.espresso.matcher.BoundedMatcher;
 import android.view.View;

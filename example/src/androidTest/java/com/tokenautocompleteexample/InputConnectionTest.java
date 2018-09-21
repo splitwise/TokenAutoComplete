@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.content.Context;
 import android.inputmethodservice.InputMethodService;
@@ -22,7 +22,7 @@ import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
-import static com.tokenautocomplete.TokenMatchers.emailForPerson;
+import static com.tokenautocompleteexample.TokenMatchers.emailForPerson;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;

@@ -1,11 +1,14 @@
 package com.tokenautocomplete;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.support.annotation.NonNull;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.widget.MultiAutoCompleteTextView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tokenizer with configurable array of characters to tokenize on.
@@ -13,63 +16,106 @@ import java.util.ArrayList;
  * Created on 2/3/15.
  * @author mgod
  */
-public class CharacterTokenizer implements MultiAutoCompleteTextView.Tokenizer {
-    ArrayList<Character> splitChar;
+public class CharacterTokenizer implements Tokenizer {
+    private ArrayList<Character> splitChar;
+    private String tokenTerminator;
 
-    CharacterTokenizer(char[] splitChar){
+    @SuppressWarnings("WeakerAccess")
+    CharacterTokenizer(List<Character> splitChar, String tokenTerminator){
         super();
-        this.splitChar = new ArrayList<>(splitChar.length);
-        for(char c : splitChar) this.splitChar.add(c);
+        this.splitChar = new ArrayList<>(splitChar);
+        this.tokenTerminator = tokenTerminator;
     }
 
-    public int findTokenStart(CharSequence text, int cursor) {
-        int i = cursor;
-
-        while (i > 0 && !splitChar.contains(text.charAt(i - 1))) {
-            i--;
+    @Override
+    public boolean containsTokenTerminator(CharSequence charSequence) {
+        for (int i = 0; i < charSequence.length(); ++i) {
+            if (splitChar.contains(charSequence.charAt(i))) {
+                return true;
+            }
         }
-        while (i > 0 && text.charAt(i) == ' ') {
-            i++;
-        }
-
-        return i;
+        return false;
     }
 
-    public int findTokenEnd(CharSequence text, int cursor) {
-        int i = cursor;
-        int len = text.length();
+    @Override
+    @NonNull
+    public List<Range> findTokenRanges(CharSequence charSequence, int start, int end) {
+        ArrayList<Range>result = new ArrayList<>();
 
-        while (i < len) {
-            if (splitChar.contains(text.charAt(i))) {
-                return i;
-            } else {
-                i++;
+        if (start == end) {
+            //Can't have a 0 length token
+            return result;
+        }
+
+        int tokenStart = start;
+
+        for (int cursor = start; cursor < end; ++cursor) {
+            Character character = charSequence.charAt(cursor);
+
+            //Avoid including leading whitespace, tokenStart will match the cursor as long as we're at the start
+            if (tokenStart == cursor && Character.isWhitespace(character)) {
+                tokenStart = cursor + 1;
+            }
+
+//            //Only advance token end if it's not whitespace to avoid trailing whitespace
+//            if (!Character.isWhitespace(character)) {
+//                tokenEnd = cursor;
+//            }
+
+            //Either this is a split character, or we contain some content and are at the end of input
+            if (splitChar.contains(character) || cursor == end - 1) {
+                if (cursor > tokenStart) {
+                    //There is some token content
+                    //Add one to range end as the end of the ranges is not inclusive
+                    result.add(new Range(tokenStart, cursor + 1));
+                }
+
+                tokenStart = cursor + 1;
             }
         }
 
-        return len;
+        return result;
     }
 
-    public CharSequence terminateToken(CharSequence text) {
-        int i = text.length();
+    @Override
+    @NonNull
+    public CharSequence wrapTokenValue(CharSequence text) {
+        CharSequence wrappedText = text + tokenTerminator;
 
-        while (i > 0 && text.charAt(i - 1) == ' ') {
-            i--;
-        }
-
-        if (i > 0 && splitChar.contains(text.charAt(i - 1))) {
-            return text;
+        if (text instanceof Spanned) {
+            SpannableString sp = new SpannableString(wrappedText);
+            TextUtils.copySpansFrom((Spanned) text, 0, text.length(),
+                    Object.class, sp, 0);
+            return sp;
         } else {
-            // Try not to use a space as a token character
-            String token = (splitChar.size()>1 && splitChar.get(0)==' ' ? splitChar.get(1) : splitChar.get(0))+" ";
-            if (text instanceof Spanned) {
-                SpannableString sp = new SpannableString(text + token);
-                TextUtils.copySpansFrom((Spanned) text, 0, text.length(),
-                        Object.class, sp, 0);
-                return sp;
-            } else {
-                return text + token;
-            }
+            return wrappedText;
         }
+    }
+
+    public static final Parcelable.Creator<CharacterTokenizer> CREATOR = new Parcelable.Creator<CharacterTokenizer>() {
+        @SuppressWarnings("unchecked")
+        public CharacterTokenizer createFromParcel(Parcel in) {
+            return new CharacterTokenizer(in);
+        }
+
+        public CharacterTokenizer[] newArray(int size) {
+            return new CharacterTokenizer[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @SuppressWarnings({"WeakerAccess", "unchecked"})
+    CharacterTokenizer(Parcel in) {
+        this(in.readArrayList(Character.class.getClassLoader()), in.readString());
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeList(splitChar);
+        parcel.writeString(tokenTerminator);
     }
 }

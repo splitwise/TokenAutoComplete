@@ -1,4 +1,4 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.content.Context;
 import android.graphics.Paint;
@@ -8,6 +8,8 @@ import android.support.test.runner.AndroidJUnit4;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
+import com.tokenautocomplete.ViewSpan;
 
 import org.junit.Rule;
 import org.junit.Test;

@@ -1,14 +1,18 @@
-package com.tokenautocomplete;
+package com.tokenautocompleteexample;
 
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.tokenautocomplete.FilteredArrayAdapter;
+import com.tokenautocomplete.TokenCompleteTextView;
 
 /**
  * Created by mgod on 11/29/17.
@@ -17,7 +21,7 @@ import android.widget.TextView;
  * This class is used in tests.
  */
 
-public class TestCleanTokenActivity extends Activity {
+public class TestCleanTokenActivity extends AppCompatActivity {
     ContactsCompletionView completionView;
     Person[] people;
     ArrayAdapter<Person> adapter;

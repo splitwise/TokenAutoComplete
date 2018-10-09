@@ -80,7 +80,7 @@ public class CharacterTokenizerTest {
     @Test
     public void handleLotsOfWhitespaceWithWhitespaceTokenizer() {
         CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(' '), "");
-        String text = "bears,      ponies     ,another";
+        String text = "bears,  \t   ponies  \n  ,another";
 
         List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
         assertEquals(Arrays.asList(new Range(0, 7), new Range(12, 19), new Range(23, 31)), ranges);

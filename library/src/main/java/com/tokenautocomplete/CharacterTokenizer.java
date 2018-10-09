@@ -57,11 +57,6 @@ public class CharacterTokenizer implements Tokenizer {
                 tokenStart = cursor + 1;
             }
 
-//            //Only advance token end if it's not whitespace to avoid trailing whitespace
-//            if (!Character.isWhitespace(character)) {
-//                tokenEnd = cursor;
-//            }
-
             //Either this is a split character, or we contain some content and are at the end of input
             if (splitChar.contains(character) || cursor == end - 1) {
                 if (cursor > tokenStart) {

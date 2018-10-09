@@ -11,11 +11,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.tokenautocomplete.FilteredArrayAdapter;
+import com.tokenautocomplete.TagTokenizer;
 import com.tokenautocomplete.TokenCompleteTextView;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -29,39 +32,14 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        people = new Person[]{
-                new Person("Marshall Weir", "marshall@example.com"),
-                new Person("Margaret Smith", "margaret@example.com"),
-                new Person("Max Jordan", "max@example.com"),
-                new Person("Meg Peterson", "meg@example.com"),
-                new Person("Amanda Johnson", "amanda@example.com"),
-                new Person("Terry Anderson", "terry@example.com"),
-                new Person("Siniša Damianos Pilirani Karoline Slootmaekers",
-                        "siniša_damianos_pilirani_karoline_slootmaekers@example.com")
-        };
+        TabHost tabs = (TabHost) findViewById(R.id.tabHost);
+        tabs.setup();
+        tabs.addTab(tabs.newTabSpec("Contacts").setContent(R.id.contactsFrame).setIndicator("Contacts"));
+        tabs.addTab(tabs.newTabSpec("Composer").setContent(R.id.hashtagsFrame).setIndicator("Composer"));
 
-        adapter = new FilteredArrayAdapter<Person>(this, R.layout.person_layout, people) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                if (convertView == null) {
-
-                    LayoutInflater l = (LayoutInflater)getContext().getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
-                    convertView = l.inflate(R.layout.person_layout, parent, false);
-                }
-
-                Person p = getItem(position);
-                ((TextView)convertView.findViewById(R.id.name)).setText(p.getName());
-                ((TextView)convertView.findViewById(R.id.email)).setText(p.getEmail());
-
-                return convertView;
-            }
-
-            @Override
-            protected boolean keepObject(Person person, String mask) {
-                mask = mask.toLowerCase();
-                return person.getName().toLowerCase().startsWith(mask) || person.getEmail().toLowerCase().startsWith(mask);
-            }
-        };
+        //Set up the contacts example views
+        people = Person.samplePeople();
+        adapter = new PersonAdapter(this, R.layout.person_layout, people);
 
         completionView = (ContactsCompletionView)findViewById(R.id.searchView);
         completionView.setAdapter(adapter);
@@ -108,6 +86,32 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
             public void onClick(View v) {
                 Random rand = new Random();
                 completionView.addObject(people[rand.nextInt(people.length)]);
+            }
+        });
+
+        //Setup the tag composer view
+        final TagCompletionView tagView = findViewById(R.id.composeView);
+        tagView.performBestGuess(false);
+        tagView.setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
+        tagView.setAdapter(new TagAdapter(this, R.layout.tag_layout, Tag.sampleTags()));
+        tagView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
+
+        final TextView taggedContentPreview = findViewById(R.id.composedValue);
+
+        tagView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                taggedContentPreview.setText(tagView.getText().toString());
             }
         });
     }

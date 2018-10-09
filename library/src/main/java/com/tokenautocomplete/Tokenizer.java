@@ -31,7 +31,7 @@ public interface Tokenizer extends Parcelable {
     CharSequence wrapTokenValue(CharSequence unwrappedTokenValue);
 
     /**
-     * Return true if there is a character in the charSequence that should trigger tokenization
+     * Return true if there is a character in the charSequence that should trigger token detection
      * @param charSequence source text to look at
      * @return true if charSequence contains a value that should end a token
      */

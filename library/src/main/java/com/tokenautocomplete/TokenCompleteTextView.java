@@ -173,8 +173,12 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
                 //Detect split characters, remove them and complete the current token instead
                 if (tokenizer.containsTokenTerminator(source)) {
-                    performCompletion();
-                    return "";
+                    //Only perform completion if we don't allow free form text, or if there's enough
+                    //content to believe this should be a token
+                    if (performBestGuess || currentCompletionText().length() > 0) {
+                        performCompletion();
+                        return "";
+                    }
                 }
 
                 //We need to not do anything when we would delete the prefix
@@ -223,7 +227,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         }
     }
 
-    public void setTokenizer(CharacterTokenizer t) {
+    public void setTokenizer(Tokenizer t) {
         tokenizer = t;
     }
 
@@ -505,7 +509,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         Editable editable = getText();
         Range currentRange = getCurrentCandidateTokenRange();
 
-        return TextUtils.substring(editable, currentRange.start, currentRange.end);
+        String result = TextUtils.substring(editable, currentRange.start, currentRange.end);
+        Log.d(TAG, "Current completion text: " + result);
+        return result;
     }
 
     protected float maxTextWidth() {
@@ -1554,6 +1560,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @param beforeLength the number of characters before the current selection end to check
      * @return true if there are no non-deletable pieces of the section
      */
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canDeleteSelection(int beforeLength) {
         if (objects.size() < 1) return true;
 

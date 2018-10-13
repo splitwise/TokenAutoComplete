@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -915,72 +916,95 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     public boolean extractText(@NonNull ExtractedTextRequest request, @NonNull ExtractedText outText) {
         try {
             return super.extractText(request, outText);
-        } catch (IndexOutOfBoundsException ignored) {
-            Log.d(TAG, "extractText hit IndexOutOfBoundsException. This may be normal.", ignored);
+        } catch (IndexOutOfBoundsException ex) {
+            Log.d(TAG, "extractText hit IndexOutOfBoundsException. This may be normal.", ex);
             return false;
         }
     }
 
     /**
-     * Append a token object to the object list
+     * Append a token object to the object list. May only be called from the main thread.
      *
-     * @param object     the object to add to the displayed tokens
+     * @param object the object to add to the displayed tokens
      */
-    public void addObject(final T object) {
+    @UiThread
+    public void addObjectSync(T object) {
+        if (object == null) return;
+        if (!allowDuplicates && objects.contains(object)) {
+            if (listener != null) {
+                listener.onDuplicateRemoved(object);
+            }
+            return;
+        }
+        if (tokenLimit != -1 && objects.size() == tokenLimit) return;
+        insertSpan(buildSpanForObject(object));
+        if (getText() != null && isFocused()) setSelection(getText().length());
+    }
+
+    /**
+     * Append a token object to the object list. Object will be added on the main thread.
+     *
+     * @param object the object to add to the displayed tokens
+     */
+    public void addObjectAsync(final T object) {
         post(new Runnable() {
             @Override
             public void run() {
-                if (object == null) return;
-                if (!allowDuplicates && objects.contains(object)) {
-                    if (listener != null) {
-                        listener.onDuplicateRemoved(object);
-                    }
-                    return;
-                }
-                if (tokenLimit != -1 && objects.size() == tokenLimit) return;
-                insertSpan(buildSpanForObject(object));
-                if (getText() != null && isFocused()) setSelection(getText().length());
+                addObjectSync(object);
             }
         });
     }
 
     /**
-     * Remove an object from the token list. Will remove duplicates or do nothing if no object
-     * present in the view.
+     * Remove an object from the token list. Will remove duplicates if present or do nothing if no
+     * object is present in the view. Uses {@link Object#equals(Object)} to find objects. May only
+     * be called from the main thread
      *
      * @param object object to remove, may be null or not in the view
      */
-    public void removeObject(final T object) {
+    @UiThread
+    public void removeObjectSync(T object) {
+        //To make sure all the appropriate callbacks happen, we just want to piggyback on the
+        //existing code that handles deleting spans when the text changes
+        Editable text = getText();
+        if (text == null) return;
+
+        // If the object is currently hidden, remove it
+        ArrayList<TokenImageSpan> toRemove = new ArrayList<>();
+        for (TokenImageSpan span : hiddenSpans) {
+            if (span.getToken().equals(object)) {
+                toRemove.add(span);
+            }
+        }
+        for (TokenImageSpan span : toRemove) {
+            hiddenSpans.remove(span);
+            // Remove it from the state and fire the callback
+            spanWatcher.onSpanRemoved(text, span, 0, 0);
+        }
+
+        updateCountSpan();
+
+        // If the object is currently visible, remove it
+        TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+        for (TokenImageSpan span : spans) {
+            if (span.getToken().equals(object)) {
+                removeSpan(span);
+            }
+        }
+    }
+
+    /**
+     * Remove an object from the token list. Will remove duplicates if present or do nothing if no
+     * object is present in the view. Uses {@link Object#equals(Object)} to find objects. Object
+     * will be added on the main thread
+     *
+     * @param object object to remove, may be null or not in the view
+     */
+    public void removeObjectAsync(final T object) {
         post(new Runnable() {
             @Override
             public void run() {
-                //To make sure all the appropriate callbacks happen, we just want to piggyback on the
-                //existing code that handles deleting spans when the text changes
-                Editable text = getText();
-                if (text == null) return;
-
-                // If the object is currently hidden, remove it
-                ArrayList<TokenImageSpan> toRemove = new ArrayList<>();
-                for (TokenImageSpan span : hiddenSpans) {
-                    if (span.getToken().equals(object)) {
-                        toRemove.add(span);
-                    }
-                }
-                for (TokenImageSpan span : toRemove) {
-                    hiddenSpans.remove(span);
-                    // Remove it from the state and fire the callback
-                    spanWatcher.onSpanRemoved(text, span, 0, 0);
-                }
-
-                updateCountSpan();
-
-                // If the object is currently visible, remove it
-                TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                for (TokenImageSpan span : spans) {
-                    if (span.getToken().equals(object)) {
-                        removeSpan(span);
-                    }
-                }
+                removeObjectSync(object);
             }
         });
     }
@@ -1092,7 +1116,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * If removeObject is working for you, you probably shouldn't be using this.
      */
     @SuppressWarnings("unused")
-    public void clear() {
+    public void clearAsync() {
         post(new Runnable() {
             @Override
             public void run() {
@@ -1258,9 +1282,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
             if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
                 TokenImageSpan token = (TokenImageSpan) what;
-                if (objects.contains(token.getToken())) {
-                    objects.remove(token.getToken());
-                }
+                objects.remove(token.getToken());
 
                 if (listener != null)
                     listener.onTokenRemoved(token.getToken());
@@ -1450,7 +1472,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         //TODO: change this to keep object spans in the correct locations based on ranges.
         for (T obj: objects) {
-            addObject(obj);
+            addObjectAsync(obj);
         }
 
         // Collapse the view if necessary

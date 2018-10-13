@@ -65,8 +65,8 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
 
         if (savedInstanceState == null) {
             completionView.setPrefix("To: ", Color.parseColor("blue"));
-            completionView.addObject(people[0]);
-            completionView.addObject(people[1]);
+            completionView.addObjectSync(people[0]);
+            completionView.addObjectSync(people[1]);
         }
 
         Button removeButton = (Button)findViewById(R.id.removeButton);
@@ -75,7 +75,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
             public void onClick(View view) {
                 List<Person> people = completionView.getObjects();
                 if (people.size() > 0) {
-                    completionView.removeObject(people.get(people.size() - 1));
+                    completionView.removeObjectAsync(people.get(people.size() - 1));
                 }
             }
         });
@@ -85,7 +85,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
             @Override
             public void onClick(View v) {
                 Random rand = new Random();
-                completionView.addObject(people[rand.nextInt(people.length)]);
+                completionView.addObjectAsync(people[rand.nextInt(people.length)]);
             }
         });
 

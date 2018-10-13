@@ -92,6 +92,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
         //Setup the tag composer view
         final TagCompletionView tagView = findViewById(R.id.composeView);
         tagView.performBestGuess(false);
+        tagView.preventFreeFormText(false);
         tagView.setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
         tagView.setAdapter(new TagAdapter(this, R.layout.tag_layout, Tag.sampleTags()));
         tagView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);

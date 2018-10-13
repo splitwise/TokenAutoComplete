@@ -94,6 +94,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private boolean focusChanging = false;
     private boolean initialized = false;
     private boolean performBestGuess = true;
+    private boolean preventFreeFormText = true;
     private boolean savingState = false;
     private boolean shouldFocusNext = false;
     private boolean allowCollapse = true;
@@ -176,7 +177,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 if (tokenizer.containsTokenTerminator(source)) {
                     //Only perform completion if we don't allow free form text, or if there's enough
                     //content to believe this should be a token
-                    if (performBestGuess || currentCompletionText().length() > 0) {
+                    if (preventFreeFormText || currentCompletionText().length() > 0) {
                         performCompletion();
                         return "";
                     }
@@ -331,14 +332,26 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     /**
-     * Set whether we try to guess an entry from the autocomplete spinner or allow any text to be
-     * entered
+     * Set whether we try to guess an entry from the autocomplete spinner or just use the
+     * defaultObject implementation for inline token completion.
      *
      * @param guess true to enable guessing
      */
     @SuppressWarnings("unused")
     public void performBestGuess(boolean guess) {
         performBestGuess = guess;
+    }
+
+    /**
+     * If set to true, the only content in this view will be the tokens and the current completion
+     * text. Use this setting to create things like lists of email addresses. If false, it the view
+     * will allow text in addition to tokens. Use this if you want to use the token search to find
+     * things like user names or hash tags to put in with text.
+     *
+     * @param prevent true to prevent non-token text. Defaults to true.
+     */
+    public void preventFreeFormText(boolean prevent) {
+        preventFreeFormText = prevent;
     }
 
     /**
@@ -1416,6 +1429,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         state.allowCollapse = allowCollapse;
         state.allowDuplicates = allowDuplicates;
         state.performBestGuess = performBestGuess;
+        state.preventFreeFormText = preventFreeFormText;
         state.tokenClickStyle = tokenClickStyle;
         Class parameterizedClass = reifyParameterizedTypeClass();
         //Our core array is Parcelable, so use that interface
@@ -1459,6 +1473,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         allowCollapse = ss.allowCollapse;
         allowDuplicates = ss.allowDuplicates;
         performBestGuess = ss.performBestGuess;
+        preventFreeFormText = ss.preventFreeFormText;
         tokenClickStyle = ss.tokenClickStyle;
         //setSplitChar(ss.splitChar);
         addListeners();
@@ -1497,6 +1512,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         boolean allowCollapse;
         boolean allowDuplicates;
         boolean performBestGuess;
+        boolean preventFreeFormText;
         TokenClickStyle tokenClickStyle;
         String parcelableClassName;
         List<?> baseObjects;
@@ -1510,6 +1526,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             allowCollapse = in.readInt() != 0;
             allowDuplicates = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
+            preventFreeFormText = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             parcelableClassName = in.readString();
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
@@ -1544,6 +1561,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             out.writeInt(allowCollapse ? 1 : 0);
             out.writeInt(allowDuplicates ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
+            out.writeInt(preventFreeFormText ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
                 out.writeString(SERIALIZABLE_PLACEHOLDER);

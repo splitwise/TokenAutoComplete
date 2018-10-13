@@ -18,7 +18,7 @@ public class CharacterTokenizerTest {
 
     @Test
     public void handleWhiteSpaceWithCommaTokens() {
-        CharacterTokenizer tokenizer = new CharacterTokenizer(Arrays.asList(','), ",");
+        CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(','), ",");
         String text = "bears, ponies";
 
         assertTrue(tokenizer.containsTokenTerminator(text));

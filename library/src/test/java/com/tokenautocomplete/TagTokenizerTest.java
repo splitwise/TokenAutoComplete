@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TagTokenizerTest {
 
-    TagTokenizer tokenizer;
+    private TagTokenizer tokenizer;
 
     @Before
     public void setup() {

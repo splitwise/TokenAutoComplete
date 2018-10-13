@@ -779,8 +779,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                             (int) getTextSize(), (int) maxTextWidth());
                     try {
                         text.insert(lastPosition, cs.text);
-                    } catch (IndexOutOfBoundsException ignored) {
-                        Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ignored);
+                    } catch (IndexOutOfBoundsException ex) {
+                        Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
                     }
                     float newWidth = Layout.getDesiredWidth(text, 0,
                             lastPosition + cs.text.length(), lastLayout.getPaint());
@@ -798,8 +798,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
                         try {
                             text.insert(lastPosition, cs.text);
-                        } catch (IndexOutOfBoundsException ignored) {
-                            Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ignored);
+                        } catch (IndexOutOfBoundsException ex) {
+                            Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
                         }
                     }
 

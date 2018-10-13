@@ -47,6 +47,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      * @param textViewResourceId The id of the TextView within the layout resource to be populated
      * @param objects The objects to represent in the ListView.
      */
+    @SuppressWarnings("WeakerAccess")
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, T[] objects) {
         this(context, resource, textViewResourceId, new ArrayList<>(Arrays.asList(objects)));
     }
@@ -73,6 +74,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
      * @param textViewResourceId The id of the TextView within the layout resource to be populated
      * @param objects The objects to represent in the ListView.
      */
+    @SuppressWarnings("WeakerAccess")
     public FilteredArrayAdapter(Context context, int resource, int textViewResourceId, List<T> objects) {
         super(context, resource, textViewResourceId, new ArrayList<>(objects));
         this.originalObjects = objects;
@@ -106,7 +108,7 @@ abstract public class FilteredArrayAdapter<T> extends ArrayAdapter<T> {
 
         @Override
         protected FilterResults performFiltering(CharSequence chars) {
-            ArrayList<T> sourceObjects = new ArrayList<T>(originalObjects);
+            ArrayList<T> sourceObjects = new ArrayList<>(originalObjects);
 
             FilterResults result = new FilterResults();
             if (chars != null && chars.length() > 0) {

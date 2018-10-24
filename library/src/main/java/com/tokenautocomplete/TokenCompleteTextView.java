@@ -909,7 +909,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             internalEditInProgress = true;
             if (tokenSpan == null) {
                 editable.replace(candidateRange.start, candidateRange.end, "");
-            } else if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
+            } else if (!allowDuplicates && contains(tokenSpan.getToken())) {
                 editable.replace(candidateRange.start, candidateRange.end, "");
                 if (listener != null) {
                     listener.onDuplicateRemoved(tokenSpan.getToken());
@@ -943,7 +943,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     @UiThread
     public void addObjectSync(T object) {
         if (object == null) return;
-        if (!allowDuplicates && objects.contains(object)) {
+        if (!allowDuplicates && contains(object)) {
             if (listener != null) {
                 listener.onDuplicateRemoved(object);
             }
@@ -952,6 +952,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         if (tokenLimit != -1 && objects.size() == tokenLimit) return;
         insertSpan(buildSpanForObject(object));
         if (getText() != null && isFocused()) setSelection(getText().length());
+    }
+
+    protected boolean contains(T object) {
+        return objects.contains(object);
     }
 
     /**
@@ -1111,7 +1115,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
             //In some cases, particularly the 1 to nth objects when not focused and restoring
             //onSpanAdded doesn't get called
-            if (!objects.contains(tokenSpan.getToken())) {
+            if (!contains(tokenSpan.getToken())) {
                 spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
             }
         } else {

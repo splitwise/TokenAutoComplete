@@ -1,7 +1,12 @@
 apply plugin: 'com.android.library'
 
+
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
+
+    configurations {
+        javadocSources.extendsFrom implementation
+    }
 
     defaultConfig {
         minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
@@ -21,13 +26,6 @@ android {
     }
 }
 
-task jar(type: Jar) {
-    dependsOn 'assembleRelease'
-    baseName project.POM_ARTIFACT_ID
-    version project.VERSION_NAME
-    from fileTree(dir: 'build/intermediates/classes/release/')
-}
-
 dependencies {
     testImplementation 'junit:junit:4.12'
 
@@ -35,4 +33,83 @@ dependencies {
     implementation "com.android.support:appcompat-v7:$project.ANDROID_SUPPORT_VERSION"
 }
 
-apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
+//Release tasks
+afterEvaluate {
+    apply plugin: 'maven'
+    apply plugin: 'signing'
+    uploadArchives.repositories.mavenDeployer {
+        beforeDeployment {
+            MavenDeployment deployment -> signing.signPom(deployment)
+        }
+
+        pom.groupId = GROUP
+        pom.artifactId = POM_ARTIFACT_ID
+        pom.version = VERSION_NAME
+
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+            authentication(userName: NEXUS_USENAME, password: NEXUS_PASSWORD)
+        }
+
+        pom.project {
+            name POM_NAME
+            packaging POM_PACKAGING
+            description POM_DESCRIPTION
+            url POM_URL
+
+            developers {
+                developer {
+                    id POM_DEVELOPER_ID
+                    name POM_DEVELOPER_NAME
+                }
+            }
+
+            licenses {
+                license {
+                    name POM_LICENCE_NAME
+                    url POM_LICENCE_URL
+                    distribution POM_LICENCE_DIST
+                }
+            }
+
+            scm {
+                url POM_SCM_URL
+                connection = POM_SCM_CONNECTION
+                developerConnection = POM_SCM_DEV_CONNECTION
+            }
+        }
+    }
+
+    signing {
+        required { gradle.taskGraph.hasTask("uploadArchives") }
+        sign configurations.archives
+    }
+
+    task libraryJavadocs(type: Javadoc) {
+        failOnError = false
+        source = android.sourceSets.main.java.srcDirs
+        classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+        classpath += configurations.javadocSources
+    }
+
+    task libraryJavadocsJar(type: Jar, dependsOn: libraryJavadocs) {
+        classifier = 'javadoc'
+        from libraryJavadocs.destinationDir
+    }
+
+    task librarySourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.srcDirs
+    }
+
+    task jar(type: Jar) {
+        dependsOn 'assembleRelease'
+        baseName project.POM_ARTIFACT_ID
+        version project.VERSION_NAME
+        from fileTree(dir: 'build/intermediates/classes/release/')
+    }
+
+    artifacts {
+        archives libraryJavadocsJar
+        archives librarySourcesJar
+    }
+}

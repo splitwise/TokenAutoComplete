@@ -41,12 +41,12 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 /**
@@ -66,6 +66,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         None(false), //...do nothing, but make sure the cursor is not in the token
         Delete(false),//...delete the token
         Select(true),//...select the token. A second click will delete it.
+        DoubleSelect(true),//...select the token. A quick (< 500ms) click again will provoke double click listener. A slow double click will do nothing
         SelectDeselect(true);
 
         private boolean mIsSelectable;
@@ -1220,6 +1221,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     protected class TokenImageSpan extends ViewSpan implements NoCopySpan {
+        private static final long MAX_TIME_TO_BE_CONSIDERED_DOUBLE_CLICK = 500; //ms
         private T token;
 
         @SuppressWarnings("WeakerAccess")
@@ -1238,13 +1240,34 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             Editable text = getText();
             if (text == null) return;
 
+            if (listener != null) {
+                listener.onTokenSelected(token);
+            }
+
             switch (tokenClickStyle) {
                 case Select:
+                case DoubleSelect:
                 case SelectDeselect:
-
                     if (!view.isSelected()) {
                         clearSelections();
                         view.setSelected(true);
+                        //set the time it was selected
+                        view.setTag(Calendar.getInstance().getTimeInMillis());
+                        break;
+                    } else if (tokenClickStyle == TokenClickStyle.DoubleSelect
+                        && view.getTag() != null) { //if deselecting, detect if it was a double click
+                        Long timeOfLastClick = (Long) view.getTag();
+                        if (timeOfLastClick != null && timeOfLastClick > 0) {
+                            long now = Calendar.getInstance().getTimeInMillis();
+                            long timeSinceLastClick = now - timeOfLastClick;
+                            if (timeSinceLastClick <= MAX_TIME_TO_BE_CONSIDERED_DOUBLE_CLICK) {
+                                if (listener != null)
+                                    listener.onTokenDoubleSelected(token);
+                            } else {
+                                //if it wasn't quick enough, reset the time
+                                view.setTag(Calendar.getInstance().getTimeInMillis());
+                            }
+                        }
                         break;
                     }
 
@@ -1272,6 +1295,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     public interface TokenListener<T> {
 
         void onTokenAdded(T token);
+        void onTokenSelected(T token);
+        void onTokenDoubleSelected(T token);//Only provoked if the DoubleSelect click style is used
         void onTokenRemoved(T token);
         void onDuplicateRemoved(T token);
     }

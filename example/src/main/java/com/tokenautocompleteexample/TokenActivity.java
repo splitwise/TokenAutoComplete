@@ -134,6 +134,14 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
         updateTokenConfirmation();
     }
 
+    @Override public void onTokenSelected(Person token) {
+        ((TextView)findViewById(R.id.lastEvent)).setText("Selected: " + token);
+    }
+
+    @Override public void onTokenDoubleSelected(Person token) {
+        ((TextView)findViewById(R.id.lastEvent)).setText("Double selected: " + token);
+    }
+
     @Override
     public void onTokenRemoved(Person token) {
         ((TextView)findViewById(R.id.lastEvent)).setText("Removed: " + token);

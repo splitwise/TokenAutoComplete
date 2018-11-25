@@ -1255,14 +1255,14 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                         view.setTag(Calendar.getInstance().getTimeInMillis());
                         break;
                     } else if (tokenClickStyle == TokenClickStyle.DoubleSelect
-                        && view.getTag() != null) { //if deselecting, detect if it was a double click
+                        && view.getTag()!= null) {//if reselecting, detect if it was a double click
                         Long timeOfLastClick = (Long) view.getTag();
                         if (timeOfLastClick != null && timeOfLastClick > 0) {
                             long now = Calendar.getInstance().getTimeInMillis();
                             long timeSinceLastClick = now - timeOfLastClick;
-                            if (timeSinceLastClick <= MAX_TIME_TO_BE_CONSIDERED_DOUBLE_CLICK) {
-                                if (listener != null)
-                                    listener.onTokenDoubleSelected(token);
+                            if (timeSinceLastClick <= MAX_TIME_TO_BE_CONSIDERED_DOUBLE_CLICK
+                                && listener != null) {
+                                listener.onTokenDoubleSelected(token);
                             } else {
                                 //if it wasn't quick enough, reset the time
                                 view.setTag(Calendar.getInstance().getTimeInMillis());

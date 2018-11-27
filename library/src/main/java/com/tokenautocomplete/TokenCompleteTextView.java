@@ -1240,15 +1240,15 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             Editable text = getText();
             if (text == null) return;
 
-            if (listener != null) {
-                listener.onTokenSelected(token);
-            }
 
             switch (tokenClickStyle) {
                 case Select:
                 case DoubleSelect:
                 case SelectDeselect:
                     if (!view.isSelected()) {
+                        if (listener != null) {
+                            listener.onTokenSelected(token);
+                        }
                         clearSelections();
                         view.setSelected(true);
                         //set the time it was selected

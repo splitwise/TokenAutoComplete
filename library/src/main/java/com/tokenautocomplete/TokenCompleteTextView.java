@@ -1131,6 +1131,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 for (TokenImageSpan span : spans) {
                     removeSpan(span);
                 }
+                updateCountSpan();
             }
         });
     }

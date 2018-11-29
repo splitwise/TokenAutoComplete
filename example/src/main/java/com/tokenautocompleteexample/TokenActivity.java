@@ -1,20 +1,16 @@
 package com.tokenautocompleteexample;
 
-import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.TabHost;
 import android.widget.TextView;
 
-import com.tokenautocomplete.FilteredArrayAdapter;
 import com.tokenautocomplete.TagTokenizer;
 import com.tokenautocomplete.TokenCompleteTextView;
 
@@ -141,6 +137,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
     }
 
     @Override
-    public void onDuplicateRemoved(Person token) {
+    public void onTokenIgnored(Person token) {
+
     }
 }

@@ -89,7 +89,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private CharSequence prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
-    private boolean allowDuplicates = true;
     private boolean focusChanging = false;
     private boolean initialized = false;
     private boolean performBestGuess = true;
@@ -252,6 +251,16 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     /**
+     * Override if you want to prevent a token from being added. Defaults to false.
+     * @param token the token to check
+     * @return true if the token should not be added, false if it's ok to add it.
+     */
+    @SuppressWarnings("unused")
+    public boolean shouldIgnoreToken(T token) {
+        return false;
+    }
+
+    /**
      * Override if you want to prevent a token from being removed. Defaults to true.
      * @param token the token to check
      * @return false if the token should not be removed, true if it's ok to remove it.
@@ -315,19 +324,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     public List<T> getObjects() {
         return new ArrayList<>(objects);
-    }
-
-    /**
-     * Sets whether to allow duplicate objects. If false, when the user selects
-     * an object that's already in the view, the current text is just cleared.
-     * <br>
-     * Defaults to true. Requires that the objects implement equals() correctly.
-     *
-     * @param allow boolean
-     */
-    @SuppressWarnings("unused")
-    public void allowDuplicates(boolean allow) {
-        allowDuplicates = allow;
     }
 
     /**
@@ -908,10 +904,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             internalEditInProgress = true;
             if (tokenSpan == null) {
                 editable.replace(candidateRange.start, candidateRange.end, "");
-            } else if (!allowDuplicates && objects.contains(tokenSpan.getToken())) {
+            } else if (shouldIgnoreToken(tokenSpan.getToken())) {
                 editable.replace(candidateRange.start, candidateRange.end, "");
                 if (listener != null) {
-                    listener.onDuplicateRemoved(tokenSpan.getToken());
+                    listener.onTokenIgnored(tokenSpan.getToken());
                 }
             } else {
                 SpannableStringBuilder ssb = new SpannableStringBuilder(tokenizer.wrapTokenValue(tokenToString(tokenSpan.token)));
@@ -941,9 +937,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     @UiThread
     public void addObjectSync(T object) {
         if (object == null) return;
-        if (!allowDuplicates && objects.contains(object)) {
+        if (shouldIgnoreToken(object)) {
             if (listener != null) {
-                listener.onDuplicateRemoved(object);
+                listener.onTokenIgnored(object);
             }
             return;
         }
@@ -1260,10 +1256,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     public interface TokenListener<T> {
-
         void onTokenAdded(T token);
         void onTokenRemoved(T token);
-        void onDuplicateRemoved(T token);
+        void onTokenIgnored(T token);
     }
 
     private class TokenSpanWatcher implements SpanWatcher {
@@ -1401,7 +1396,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         state.prefix = prefix;
         state.allowCollapse = allowCollapse;
-        state.allowDuplicates = allowDuplicates;
         state.performBestGuess = performBestGuess;
         state.preventFreeFormText = preventFreeFormText;
         state.tokenClickStyle = tokenClickStyle;
@@ -1445,7 +1439,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         internalEditInProgress = false;
         updateHint();
         allowCollapse = ss.allowCollapse;
-        allowDuplicates = ss.allowDuplicates;
         performBestGuess = ss.performBestGuess;
         preventFreeFormText = ss.preventFreeFormText;
         tokenClickStyle = ss.tokenClickStyle;
@@ -1484,7 +1477,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         CharSequence prefix;
         boolean allowCollapse;
-        boolean allowDuplicates;
         boolean performBestGuess;
         boolean preventFreeFormText;
         TokenClickStyle tokenClickStyle;
@@ -1498,7 +1490,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             super(in);
             prefix = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
             allowCollapse = in.readInt() != 0;
-            allowDuplicates = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
             preventFreeFormText = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
@@ -1533,7 +1524,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             super.writeToParcel(out, flags);
             TextUtils.writeToParcel(prefix, out, 0);
             out.writeInt(allowCollapse ? 1 : 0);
-            out.writeInt(allowDuplicates ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(preventFreeFormText ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());

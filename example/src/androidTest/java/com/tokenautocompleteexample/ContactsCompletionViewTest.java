@@ -15,6 +15,7 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static com.tokenautocompleteexample.TokenMatchers.emailForPerson;
 import static com.tokenautocompleteexample.TokenMatchers.tokenCount;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Instrumentation test, which will execute on an Android device.
@@ -25,20 +26,46 @@ import static org.hamcrest.Matchers.is;
 public class ContactsCompletionViewTest {
 
     @Rule
-    public ActivityTestRule<TokenActivity> activityRule = new ActivityTestRule<>(
-            TokenActivity.class);
+    public ActivityTestRule<TestCleanTokenActivity> activityRule = new ActivityTestRule<>(
+            TestCleanTokenActivity.class);
 
     @Test
-    public void completesOnComma() throws Exception {
+    public void completesOnComma(){
         onView(withId(R.id.searchView))
                 .perform(typeText("mar,"))
-                .check(matches(emailForPerson(2, is("marshall@example.com"))));
+                .check(matches(emailForPerson(0, is("marshall@example.com"))))
+                .check(matches(tokenCount(is(1))));
     }
 
     @Test
-    public void doesntCompleteWithoutComma() throws Exception {
+    public void doesntCompleteWithoutComma() {
         onView(withId(R.id.searchView))
                 .perform(typeText("mar"))
+                .check(matches(tokenCount(is(0))));
+    }
+
+    @Test
+    public void ignoresObjects() {
+        final Person ignorable = Person.samplePeople()[0];
+        final Person notIgnorable = Person.samplePeople()[1];
+        final ContactsCompletionView completionView = activityRule.getActivity().completionView;
+        completionView.setPersonToIgnore(ignorable);
+
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                completionView.addObjectSync(notIgnorable);
+                assertEquals(1, completionView.getObjects().size());
+                completionView.addObjectSync(ignorable);
+                assertEquals(1, completionView.getObjects().size());
+            }
+        });
+
+        onView(withId(R.id.searchView))
+                .perform(typeText(ignorable.getName() + ","))
+                .check(matches(tokenCount(is(1))));
+        onView(withId(R.id.searchView))
+                .perform(typeText("ter,"))
                 .check(matches(tokenCount(is(2))));
     }
 }

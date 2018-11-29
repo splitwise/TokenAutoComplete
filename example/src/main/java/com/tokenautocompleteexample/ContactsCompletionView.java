@@ -21,6 +21,7 @@ import com.tokenautocomplete.TokenCompleteTextView;
 public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     InputConnection testAccessibleInputConnection;
+    Person personToIgnore;
 
     public ContactsCompletionView(Context context) {
         super(context);
@@ -53,9 +54,19 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
         }
     }
 
+    //Methods for testing
     @Override
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
         testAccessibleInputConnection = super.onCreateInputConnection(outAttrs);
         return testAccessibleInputConnection;
+    }
+
+    void setPersonToIgnore(Person person) {
+        this.personToIgnore = person;
+    }
+
+    @Override
+    public boolean shouldIgnoreToken(Person token) {
+        return personToIgnore != null && personToIgnore.getEmail().equals(token.getEmail());
     }
 }

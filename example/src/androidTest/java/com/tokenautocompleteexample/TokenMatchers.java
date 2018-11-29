@@ -1,11 +1,16 @@
 package com.tokenautocompleteexample;
 
 import android.support.test.espresso.matcher.BoundedMatcher;
+import android.text.Editable;
 import android.view.View;
+
+import com.tokenautocomplete.TokenCompleteTextView;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 import static android.support.test.espresso.core.deps.guava.base.Preconditions.checkNotNull;
@@ -42,6 +47,35 @@ class TokenMatchers {
             @Override
             public boolean matchesSafely(ContactsCompletionView view) {
                 return intMatcher.matches(view.getObjects().size());
+            }
+        };
+    }
+
+    static Matcher<View> orderedTokenObjects(final List<?> objects) {
+        checkNotNull(objects);
+        return new BoundedMatcher<View, ContactsCompletionView>(ContactsCompletionView.class) {
+
+            @Override
+            public void describeTo(Description description) {
+                description.appendText(tokenObjectDescription(objects));
+            }
+
+            @Override
+            public void describeMismatch(Object item, Description description) {
+                super.describeMismatch(item, description);
+
+                String expected = tokenObjectDescription(objects);
+                String actual = tokenObjectDescription(((ContactsCompletionView)item).getObjects());
+                description.appendText(String.format("Expected %s\nGot %s", expected, actual));
+            }
+
+            @Override
+            protected boolean matchesSafely(ContactsCompletionView view) {
+                return objects.equals(view.getObjects());
+            }
+
+            private String tokenObjectDescription(List o) {
+                return String.format(Locale.US, "token objects: %s", o.toString());
             }
         };
     }

@@ -24,7 +24,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.method.QwertyKeyListener;
 import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -315,7 +314,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @return List of tokens
      */
     public List<T> getObjects() {
-        return objects;
+        return new ArrayList<>(objects);
     }
 
     /**
@@ -399,7 +398,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     @SuppressWarnings("unused")
     public CharSequence getTextForAccessibility() {
-        if (getObjects().size() == 0) {
+        if (objects.size() == 0) {
             return getText();
         }
 
@@ -875,7 +874,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     @Override
     protected CharSequence convertSelectionToString(Object object) {
         selectedObject = (T) object;
-        return initialized ? "" : super.convertSelectionToString(object);
+        return "";
     }
 
     protected TokenImageSpan buildSpanForObject(T obj) {
@@ -915,7 +914,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                     listener.onDuplicateRemoved(tokenSpan.getToken());
                 }
             } else {
-                QwertyKeyListener.markAsReplaced(editable, candidateRange.start, candidateRange.end, original);
                 SpannableStringBuilder ssb = new SpannableStringBuilder(tokenizer.wrapTokenValue(tokenToString(tokenSpan.token)));
                 editable.replace(candidateRange.start, candidateRange.end, ssb);
                 editable.setSpan(tokenSpan, candidateRange.start, candidateRange.start + ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1059,13 +1057,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
         }
 
-        int end = text.getSpanEnd(span);
-        if (Character.isWhitespace(text.charAt(end))) {
-            //Add 1 to the end because we put a " " at the end of the spans when adding them
-            end += 1;
-        }
         internalEditInProgress = true;
-        text.delete(text.getSpanStart(span), end);
+        text.delete(text.getSpanStart(span), text.getSpanEnd(span));
         internalEditInProgress = false;
 
         if (allowCollapse && !isFocused()) {
@@ -1141,9 +1134,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
                 for (TokenImageSpan span : spans) {
                     removeSpan(span);
-
-                    // Make sure the callback gets called
-                    spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
                 }
             }
         });
@@ -1315,10 +1305,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private class TokenTextWatcher implements TextWatcher {
         ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
 
-        void removeToken(TokenImageSpan token, Editable text) {
-            text.removeSpan(token);
-        }
-
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             // count > 0 means something will be deleted
@@ -1345,22 +1331,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             ArrayList<TokenImageSpan> spansCopy = new ArrayList<>(spansToRemove);
             spansToRemove.clear();
             for (TokenImageSpan token : spansCopy) {
-//                int spanStart = text.getSpanStart(token);
-//                int spanEnd = text.getSpanEnd(token);
-
-                removeToken(token, text);
-
-                //The end of the span is the character index after it
-                //spanEnd--;
-
-                //Delete any extra split chars
-//                if (spanEnd >= 0 && tokenizer.isSplitChar(text.charAt(spanEnd))) {
-//                    text.delete(spanEnd, spanEnd + 1);
-//                }
-//
-//                if (spanStart >= 0 && tokenizer.isSplitChar(text.charAt(spanStart))) {
-//                    text.delete(spanStart, spanStart + 1);
-//                }
+                //Only remove it if it's still present
+                if (text.getSpanStart(token) != -1 && text.getSpanEnd(token) != -1) {
+                    removeSpan(token);
+                }
             }
 
             clearSelections();
@@ -1374,7 +1348,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     protected List<Serializable> getSerializableObjects() {
         List<Serializable> serializables = new ArrayList<>();
-        for (Object obj : getObjects()) {
+        for (Object obj : objects) {
             if (obj instanceof Serializable) {
                 serializables.add((Serializable) obj);
             } else {
@@ -1435,7 +1409,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         //Our core array is Parcelable, so use that interface
         if (Parcelable.class.isAssignableFrom(parameterizedClass)) {
             state.parcelableClassName = parameterizedClass.getName();
-            state.baseObjects = getObjects();
+            state.baseObjects = objects;
         } else {
             //Fallback on Serializable
             state.parcelableClassName = SavedState.SERIALIZABLE_PLACEHOLDER;
@@ -1475,7 +1449,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         performBestGuess = ss.performBestGuess;
         preventFreeFormText = ss.preventFreeFormText;
         tokenClickStyle = ss.tokenClickStyle;
-        //setSplitChar(ss.splitChar);
+        tokenizer = ss.tokenizer;
         addListeners();
 
         List<T> objects;
@@ -1487,7 +1461,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         //TODO: change this to keep object spans in the correct locations based on ranges.
         for (T obj: objects) {
-            addObjectAsync(obj);
+            addObjectSync(obj);
         }
 
         // Collapse the view if necessary
@@ -1674,7 +1648,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
 
             //Also, some keyboards don't correctly respect the replacement if the replacement
-            //is the same number of characters as the replacement span (",, "), so 3 letters
+            //is the same number of characters as the replacement span
             //We need to ignore this value if it's available
             if (lastCompletionText != null && text != null &&
                     text.length() == lastCompletionText.length() + 1 &&

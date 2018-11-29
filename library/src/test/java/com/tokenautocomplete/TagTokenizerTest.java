@@ -44,7 +44,7 @@ public class TagTokenizerTest {
     @Test
     public void testMissingTokenContentInput() {
         String test = "@token       @ asdm      @asjdfhajks      sdfasdf";
-        assertEquals(Collections.singletonList(new Range(0,6)),
+        assertEquals(Arrays.asList(new Range(0,6), new Range(25, 36)),
                 tokenizer.findTokenRanges(test, 0, test.length()));
     }
 }

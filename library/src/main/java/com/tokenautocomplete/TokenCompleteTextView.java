@@ -1112,26 +1112,15 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     /**
-     * Remove all objects from the token list.
-     * We're handling this separately because removeObject doesn't always reliably trigger
-     * onSpanRemoved when called too fast.
-     * If removeObject is working for you, you probably shouldn't be using this.
+     * Remove all objects from the token list. Objects will be removed on the main thread.
      */
-    @SuppressWarnings("unused")
     public void clearAsync() {
         post(new Runnable() {
             @Override
             public void run() {
-                // If there's no text, we're already empty
-                Editable text = getText();
-                if (text == null) return;
-
-                // Get all spans in the EditText and remove them
-                TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-                for (TokenImageSpan span : spans) {
-                    removeSpan(span);
+                for (T object: getObjects()) {
+                    removeObjectSync(object);
                 }
-                updateCountSpan();
             }
         });
     }

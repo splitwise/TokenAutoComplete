@@ -12,8 +12,10 @@ import static android.support.test.espresso.action.ViewActions.typeText;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
+import static android.support.test.espresso.matcher.ViewMatchers.withText;
 import static com.tokenautocompleteexample.TokenMatchers.emailForPerson;
 import static com.tokenautocompleteexample.TokenMatchers.tokenCount;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 
@@ -67,5 +69,43 @@ public class ContactsCompletionViewTest {
         onView(withId(R.id.searchView))
                 .perform(typeText("ter,"))
                 .check(matches(tokenCount(is(2))));
+    }
+
+    @Test
+    public void clearsAllObjects() {
+        final ContactsCompletionView completionView = activityRule.getActivity().completionView;
+        completionView.allowCollapse(true);
+
+        final TestTokenListener listener = new TestTokenListener();
+        completionView.setTokenListener(listener);
+
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                for (Person person: Person.samplePeople()) {
+                    completionView.addObjectSync(person);
+                }
+                assertEquals(Person.samplePeople().length, completionView.getObjects().size());
+                assertEquals(Person.samplePeople().length, listener.added.size());
+                completionView.performCollapse(false);
+            }
+        });
+
+        onView(withId(R.id.searchView))
+                //The +count text is included
+                .check(matches(withText(containsString("+"))))
+                .check(matches(tokenCount(is(Person.samplePeople().length))));
+        completionView.clearAsync();
+        onView(withId(R.id.searchView))
+                .check(matches(tokenCount(is(0))));
+
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                assertEquals(Person.samplePeople().length, listener.added.size());
+                assertEquals(Person.samplePeople().length, listener.removed.size());
+                assertEquals(0, listener.ignored.size());
+            }
+        });
     }
 }

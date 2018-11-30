@@ -1012,6 +1012,20 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     /**
+     * Remove all objects from the token list. Objects will be removed on the main thread.
+     */
+    public void clearAsync() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                for (T object: getObjects()) {
+                    removeObjectSync(object);
+                }
+            }
+        });
+    }
+
+    /**
      * Set the count span the current number of hidden objects
      */
     private void updateCountSpan() {
@@ -1048,8 +1062,14 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
         }
 
+        //We usually add whitespace after a token, so let's try to remove it as well if it's present
+        int end = text.getSpanEnd(span);
+        if (end < text.length() && text.charAt(end) == ' ') {
+            end += 1;
+        }
+
         internalEditInProgress = true;
-        text.delete(text.getSpanStart(span), text.getSpanEnd(span));
+        text.delete(text.getSpanStart(span), end);
         internalEditInProgress = false;
 
         if (allowCollapse && !isFocused()) {
@@ -1104,20 +1124,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
             updateCountSpan();
         }
-    }
-
-    /**
-     * Remove all objects from the token list. Objects will be removed on the main thread.
-     */
-    public void clearAsync() {
-        post(new Runnable() {
-            @Override
-            public void run() {
-                for (T object: getObjects()) {
-                    removeObjectSync(object);
-                }
-            }
-        });
     }
 
     private void updateHint() {
@@ -1278,10 +1284,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         }
     }
 
-    /**
-     * deletes tokens if you delete the space in front of them
-     * without this, you get the auto-complete dropdown a character early
-     */
     private class TokenTextWatcher implements TextWatcher {
         ArrayList<TokenImageSpan> spansToRemove = new ArrayList<>();
 

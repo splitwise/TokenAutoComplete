@@ -97,7 +97,9 @@ public class ContactsCompletionViewTest {
                 .check(matches(tokenCount(is(Person.samplePeople().length))));
         completionView.clearAsync();
         onView(withId(R.id.searchView))
-                .check(matches(tokenCount(is(0))));
+                .check(matches(tokenCount(is(0))))
+                //The text should also reset completely
+                .check(matches(withText(String.format("To: %s", completionView.getHint()))));
 
         activityRule.getActivity().runOnUiThread(new Runnable() {
             @Override

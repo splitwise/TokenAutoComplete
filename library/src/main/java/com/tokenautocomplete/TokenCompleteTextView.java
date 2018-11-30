@@ -236,7 +236,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      *
      * @param cStyle The TokenClickStyle
      */
-    @SuppressWarnings("unused")
     public void setTokenClickStyle(TokenClickStyle cStyle) {
         tokenClickStyle = cStyle;
     }
@@ -255,8 +254,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @param token the token to check
      * @return true if the token should not be added, false if it's ok to add it.
      */
-    @SuppressWarnings("unused")
-    public boolean shouldIgnoreToken(T token) {
+    public boolean shouldIgnoreToken(@SuppressWarnings("unused") T token) {
         return false;
     }
 
@@ -265,8 +263,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @param token the token to check
      * @return false if the token should not be removed, true if it's ok to remove it.
      */
-    @SuppressWarnings("unused")
-    public boolean isTokenRemovable(T token) {
+    public boolean isTokenRemovable(@SuppressWarnings("unused") T token) {
         return true;
     }
 
@@ -332,7 +329,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      *
      * @param guess true to enable guessing
      */
-    @SuppressWarnings("unused")
     public void performBestGuess(boolean guess) {
         performBestGuess = guess;
     }
@@ -354,7 +350,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      *
      * @param allowCollapse true if it should collapse
      */
-    @SuppressWarnings("unused")
     public void allowCollapse(boolean allowCollapse) {
         this.allowCollapse = allowCollapse;
     }

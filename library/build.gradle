@@ -47,7 +47,8 @@ afterEvaluate {
         pom.version = VERSION_NAME
 
         repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-            authentication(userName: NEXUS_USENAME, password: NEXUS_PASSWORD)
+            authentication(userName: hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : "",
+                    password: hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : "")
         }
 
         pom.project {

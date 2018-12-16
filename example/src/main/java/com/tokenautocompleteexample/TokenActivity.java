@@ -111,6 +111,15 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
                 taggedContentPreview.setText(tagView.getText().toString());
             }
         });
+
+        //NOTE: this is not a great general solution to the problem of setting/restoring tokenized
+        //freeform text. I'm still looking for a good solution that would also allow pasting raw
+        //text into the view and having tokens get processed in it
+        tagView.setText("A sample ");
+        tagView.addObjectSync(Tag.sampleTags()[0]);
+        tagView.append("tweet with ");
+        tagView.addObjectSync(Tag.sampleTags()[5]);
+        tagView.addObjectSync(Tag.sampleTags()[10]);
     }
 
     private void updateTokenConfirmation() {

@@ -473,6 +473,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         int cursorEndPosition = getSelectionEnd();
         int candidateStringStart = prefix.length();
         int candidateStringEnd = editable.length();
+        if (hintVisible) {
+            //Don't try to search the hint for possible tokenizable strings
+            candidateStringEnd = candidateStringStart;
+        }
 
         //We want to find the largest string that contains the selection end that is not already tokenized
         TokenImageSpan[] spans = editable.getSpans(prefix.length(), editable.length(), TokenImageSpan.class);
@@ -1610,6 +1614,18 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
 
             return super.deleteSurroundingText(beforeLength, afterLength);
+        }
+
+        @Override
+        public boolean setComposingRegion(int start, int end) {
+            //The hint is displayed inline as regular text, but we want to disable normal compose
+            //functionality on it, so if we attempt to set a composing region on the hint, set the
+            //composing region to have length of 0, which indicates there is no composing region
+            //Without this, on many software keyboards, the first word of the hint will be underlined
+            if (hintVisible) {
+                start = end = 0;
+            }
+            return super.setComposingRegion(start, end);
         }
 
         @Override

@@ -69,4 +69,9 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
     public boolean shouldIgnoreToken(Person token) {
         return personToIgnore != null && personToIgnore.getEmail().equals(token.getEmail());
     }
+
+    public void simulateSelectingPersonFromList(Person person) {
+        convertSelectionToString(person);
+        replaceText(currentCompletionText());
+    }
 }

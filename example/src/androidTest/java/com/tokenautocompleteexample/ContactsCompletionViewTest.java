@@ -110,4 +110,28 @@ public class ContactsCompletionViewTest {
             }
         });
     }
+
+    @Test
+    public void handlesHintOnInitialItemSelected() {
+        final ContactsCompletionView completionView = activityRule.getActivity().completionView;
+
+        final TestTokenListener listener = new TestTokenListener();
+        completionView.setTokenListener(listener);
+
+        onView(withId(R.id.searchView))
+                .check(matches(tokenCount(is(0))))
+                //The text should also reset completely
+                .check(matches(withText(String.format("To: %s", completionView.getHint()))));
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                completionView.simulateSelectingPersonFromList(Person.samplePeople()[0]);
+            }
+        });
+
+        onView(withId(R.id.searchView))
+                .check(matches(tokenCount(is(1))))
+                //The text should also reset completely
+                .check(matches(withText(String.format("To: %s, ", Person.samplePeople()[0].toString()))));
+    }
 }

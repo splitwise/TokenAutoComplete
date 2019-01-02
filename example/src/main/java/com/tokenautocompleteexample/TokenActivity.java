@@ -147,6 +147,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
 
     @Override
     public void onTokenIgnored(Person token) {
-
+        ((TextView)findViewById(R.id.lastEvent)).setText("Ignored: " + token);
+        updateTokenConfirmation();
     }
 }

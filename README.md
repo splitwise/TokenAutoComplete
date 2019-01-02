@@ -1,6 +1,39 @@
-### Planning note
+### Version 3.0
 
-If you're already using the library, I'm looking at redesigning some of the core components to make this library more reliable and deal with some lingering bugs. Please give me feedback on how you're using it [here](https://github.com/splitwise/TokenAutoComplete/issues/272)
+The `3.0.0-beta` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. This version is still a little unstable, so I would only recommend it if you are having trouble using version `2.0.8`. You can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
+
+### Upgrading from 2.* to 3.0
+
+For most developers, the migration should be fairly simple. Here are the likely issues you'll need to resolve:
+
+1. The view now inherits from `AppCompatAutoCompleteTextView`. You probably don't need to make any changes for this, but you will need to include the Android support library if you are not already.
+
+1. `setTokenDeleteStyle` has been removed. Something similar to the Clear style has been hardcoded in. This feature never worked reliably and caused a lot of crashes.
+
+1. `addObject` has been renamed `addObjectAsync`. `removeObject` has been renamed `removeObjectAsync`. There are also `addObjectSync`/`removeObjectSync` versions that can be called from the UI thread and guarantee that `getObjects` will include these changes on the next call.
+
+1. `setAllowDuplicates(false)` has been made more flexible to deal with issues around different kinds of equality. If you need the 2.* version of the behavior, add this to your `TokenCompleteTextView` subclass:
+
+```
+@Override
+public boolean shouldIgnoreToken(T token) {
+    return getObjects().contains(token);
+}
+```
+
+1. `TokenListener` has a new method you will need to add:
+
+```
+public interface TokenListener<T> {
+    void onTokenAdded(T token);
+    void onTokenRemoved(T token);
+    void onTokenIgnored(T token);
+}
+```
+
+1. `convertSerializableArrayToObjectArray` has been renamed `convertSerializableObjectsToTypedObjects`.
+
+There have been a number of under the hood changes to the text handling, so if you've been directly accessing the text or using your own tokenizer, you may need to make more changes than this.
 
 ### Upgrading from 1.* to 2.0
 
@@ -9,9 +42,9 @@ There is one breaking change from 1.* to 2.0. You need to extend ```TokenComplet
 TokenAutoComplete
 =================
 
-TokenAutoComplete is an Android Gmail style token  auto-complete text field and filter. It's designed to have an extremely simple API to make it easy for anyone to implement this functionality while still exposing enough customization to let you make it awesome.
+TokenAutoComplete is an Android Gmail style token auto-complete text field and filter. It's designed to have an extremely simple API to make it easy for anyone to implement this functionality while still exposing enough customization to let you make it awesome.
 
-Support for Android 4.0.3 (API 15) and up. If you need support for earlier versions of Android, [version 1.2.1](https://github.com/splitwise/TokenAutoComplete/releases/tag/v1.2.1) is the most recent version that supports Android 2.2 (API 8) and up.
+Support for Android 4.0.3 (API 14) and up. If you need support for earlier versions of Android, [version 1.2.1](https://github.com/splitwise/TokenAutoComplete/releases/tag/v1.2.1) is the most recent version that supports Android 2.2 (API 8) and up.
 
 ![Focused TokenAutoCompleteTextView example](https://raw.github.com/splitwise/TokenAutoComplete/gh-pages/images/focused.png)
 
@@ -23,7 +56,7 @@ Setup
 ### Gradle
 ```
 dependencies {
-    compile "com.splitwise:tokenautocomplete:2.0.8@aar"
+    compile "com.splitwise:tokenautocomplete:3.0.0-beta@aar"
 }
 ```
 ### Maven
@@ -31,7 +64,7 @@ dependencies {
 <dependency>
   <groupId>com.splitwise</groupId>
   <artifactId>tokenautocomplete</artifactId>
-  <version>2.0.8</version>
+  <version>3.0.0-beta</version>
   <type>aar</type>
 </dependency>
 ```
@@ -55,7 +88,7 @@ For a basic token auto complete view, you'll need to
 
 ### Subclass TokenCompleteTextView
 
-You'll need to provide your own implementations for getViewForObject and defaultObject. You should return a view that displays the token from getViewForObject. In defaultObject, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
+You'll need to provide your own implementations for `getViewForObject` and `defaultObject`. You should return a view that displays the token from `getViewForObject`. In `defaultObject`, you need to guess what the user meant with their completion. This is usually from the user typing something and hitting "," - see the way gmail for Android handles this for example. Here's a simple example:
 
 ```java
 public class ContactsCompletionView extends TokenCompleteTextView<Person> {
@@ -75,7 +108,7 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 
     @Override
     protected Person defaultObject(String completionText) {
-        //Stupid simple example of guessing if we have an email or not
+        //Oversimplified example of guessing if we have an email or not
         int index = completionText.indexOf('@');
         if (index == -1) {
             return new Person(completionText, completionText.replace(" ", "") + "@example.com");
@@ -176,7 +209,7 @@ Layout code
 </RelativeLayout>
 ```
 
-That's it! You can grab the objects the user tokenized with getObjects() on the TokenCompleteTextView when you need to get the data out.
+That's it! You can grab the objects the user tokenized with `getObjects()` on the `TokenCompleteTextView` when you need to get the data out.
 
 
 Setting a prefix prompt
@@ -193,11 +226,9 @@ if (savedInstanceState == null) {
 Custom filtering
 ================
 
-If you've used the gmail auto complete, you know that it doesn't use the default "toString" filtering you get with an ArrayAdapter. If you've dug in to the ArrayAdapter, you find an unfortunate mess with no good place for you to add your own custom filter code without re-writing the whole class. If you need to support older versions of Android, this quickly becomes difficult as you'll need to carefully handle API differences for each version.
+If you've used the gmail auto complete, you know that it doesn't use the default "toString" filtering you get with an `ArrayAdapter`.
 
-(NOTE: ArrayAdapter is actually well written, it just doesn't allow for easy custom filters)
-
-I've added my own FilteredArrayAdapter to the jar file that is a subclass of ArrayAdapter but does have some good hooks for custom filtering. You'll want to be fairly efficient in this as it gets called a lot, but it's a simple process to add a custom filter. If you are using the TokenActivity above, you simply replace the line
+I've added my own FilteredArrayAdapter to the jar file that is a subclass of ArrayAdapter but has some good hooks for custom filtering. You'll want to be fairly efficient in this as it gets called a lot, but it's a simple process to add a custom filter. If you are using the `TokenActivity` above, you simply replace the line
 
 ```java
 adapter = new ArrayAdapter<Person>(this, android.R.layout.simple_list_item_1, people);
@@ -218,7 +249,16 @@ adapter = new FilteredArrayAdapter<Person>(this, android.R.layout.simple_list_it
 Duplicate objects
 =================
 
-In addition to custom filtering, you may want to make sure you don't accidentally miss something and get duplicate tokens. ```allowDuplicates(false)``` on the ```TokenCompleteTextView``` will prevent any tokens currently in the view from being added a second time. Token objects must implement ```equals``` correctly. Any text the user entered for the duplicate token will be cleared.
+In addition to custom filtering, you may want to make sure you don't get duplicate tokens. In your `TokenCompleteTextView` subclass, override `shouldIgnoreToken`:
+
+```
+@Override
+public boolean shouldIgnoreToken(T token) {
+    return getObjects().contains(token);
+}
+```
+
+Any text the user entered for the duplicate token will be cleared. You can implement whatever matching behavior you need. This implementation assumes the `equals` method on your token objects is a reasonable comparison.
 
 Responding to user selections
 =============================
@@ -226,9 +266,10 @@ Responding to user selections
 If you're solving a similar problem to Splitwise, you need to handle users adding and removing tokens. I've provided a simple interface to get these events and allow you to respond to them in the TokenCompleteTextView:
 
 ```java
-public static interface TokenListener {
-    public void onTokenAdded(Object token);
-    public void onTokenRemoved(Object token);
+public static interface TokenListener<T> {
+    public void onTokenAdded(T token);
+    public void onTokenRemoved(T token);
+    public void onTokenIgnored(T token)
 }
 ```
 
@@ -245,13 +286,18 @@ public class TokenActivity extends Activity implements TokenCompleteTextView.Tok
     }
 
     @Override
-    public void onTokenAdded(Object token) {
+    public void onTokenAdded(Person token) {
         System.out.println("Added: " + token);
     }
 
     @Override
-    public void onTokenRemoved(Object token) {
+    public void onTokenRemoved(Person token) {
         System.out.println("Removed: " + token);
+    }
+
+    @Override
+    public void onTokenIgnored(Person token) {
+        System.out.println("Ignored: " + token);
     }
 }
 ```
@@ -261,13 +307,14 @@ In Splitwise we use these callbacks to handle users selecting a group when addin
 Programatically add and remove objects
 ======================================
 
-You may want to prefill the list with objects. For example when replying to an email, you would want the To: and CC: fields to have the correct emails in them. You can use ```addObject``` to put these tokens in. If you are using ```TokenDeleteStyle.PartialCompletion``` , you will want to call ```addObject(obj, "completion text")``` to get appropriate replacement text, otherwise just call ```addObject(obj)```. You can also remove objects programatically with ```removeObject``` though this will remove all objects that return true when calling ```equals``` on them. If you have copies in the array, you may need to take special care with this.
-Finally there is a ```clear``` function to empty the EditText and remove all the objects.
+You may want to prefill the list with objects. For example when replying to an email, you would want the To: and CC: fields to have the correct emails in them. You can use ```addObjectSync``` to put these tokens in. You can also remove objects programatically with ```removeObjectSync``` though this will remove all objects that return true when calling ```equals``` on them. If you have copies in the array, you may need to take special care with this.
+
+The `Sync` versions of these methods must be called from the UI thread. There are also `addObjectAsync` and `removeObjectAsync` that can be called from any thread, but will not update the view or data immediately. Finally, there is a ```clearAsync``` function to empty the EditText and remove all the objects.
 
 Letting users click to select and delete tokens
 ===============================================
 
-There are three different styles of click handling build into the project. Please open an issue if you need some behavior beyond this with your code! It's relatively easy to add custom click handling, but I'm not convinced anyone would need anything beyond the ones I've provided. Call ```setTokenClickStyle``` to change the behavior.
+There are four different styles of click handling build into the project. Call ```setTokenClickStyle``` to change the behavior. If you need more control over how click behavior works, please see issue #350.
 
 #### TokenCompleteTextView.TokenClickStyle.None
 
@@ -279,7 +326,15 @@ When the user clicks on a token, the token will be removed from the field. If yo
 
 #### TokenCompleteTextView.TokenClickStyle.Select
 
-This behavior most closely matches the Gmail token field behavior, but I did not make it the default to simplify the initial tutorial. The first click on a token will unselect any currently selected token views, then it will call ```setSelected(true)``` on the selected token. If you want to change the colors of the token, you will need to add appropriate drawables to your project. In the test project, we have the following:
+This behavior most closely matches the Gmail token field behavior, but I did not make it the default to simplify the initial tutorial. The first click on a token will unselect any currently selected token views, then it will call ```setSelected(true)``` on the selected token.
+
+#### TokenCompleteTextView.TokenClickStyle.SelectDeselect
+
+This works the same as `Select` except that a second click on the token will deselect it and call `setSelected(false)`.
+
+#### Showing token selected state
+
+If you want to change the colors of the token when it is selected, you will need to add appropriate drawables to your project. In the test project, we have the following:
 
 token_background.xml
 ```xml
@@ -365,35 +420,16 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
 }
 ```
 
-Custom completion delete behavior
-=================================
-
-We've defaulted to the gmail style delete handling. That is, the most recently completed token, when deleted, turns into the text that was there before. All other tokens simply disappear when deleted.
-
-While this is the best in our case, we've provided a couple of other options if you want them. Call ```setDeletionStyle``` on the ```TokenCompleteTextView``` for different behaviors.
-
-#### TokenCompleteTextView.TokenDeleteStyle.Clear
-
-This is the default. The most recently completed token will turn into the partial completion text it replaces, all other tokens will just disappear when deleted
-
-#### TokenCompleteTextView.TokenDeleteStyle.PartialCompletion
-
-All tokens will turn into the partial completion text they replaced
-
-#### TokenCompleteTextView.TokenDeleteStyle.ToString
-
-Tokens will be replaced with the toString value of the objects they represent when they are deleted
-
 Restoring the view state
 ========================
 
-If your token objects implement ```Serializable```, the ```TokenCompleteTextView``` will automatically handle ```onSaveInstanceState``` and ```onRestoreInstanceState```. If you cannot make your objects ```Serializable```, you should override ```getSerializableObjects``` and ```convertSerializableArrayToObjectArray```. ```getSerializableObjects``` should return an array of ```Serializable``` objects that can be used to rebuild your original objects when restoring the view state. ```convertSerializableArrayToObjectArray``` should take an array of ```Serializable``` objects and use them to rebuild your token objects.
+If your token objects implement ```Serializable``` or `Parcelable`, the ```TokenCompleteTextView``` will automatically handle ```onSaveInstanceState``` and ```onRestoreInstanceState```. If you cannot make your objects ```Serializable``` or `Parcelable`, you should override ```getSerializableObjects``` and ```convertSerializableObjectsToTypedObjects```. ```getSerializableObjects``` should return an array of ```Serializable``` objects that can be used to rebuild your original objects when restoring the view state. ```convertSerializableObjectsToTypedObjects``` should take an array of ```Serializable``` objects and use them to rebuild your token objects.
 
 We use something similar to this at [splitwise](http://splitwise.com) to avoid saving complicated object graphs:
 
 ```java
 @Override
-protected ArrayList<Object> convertSerializableArrayToObjectArray(ArrayList<Serializable> sers) {
+protected ArrayList<Object> convertSerializableObjectsToTypedObjects(ArrayList<Serializable> sers) {
     ArrayList<Object> objs = new ArrayList<Object>();
     for (Serializable s: sers) {
         if (s instanceof Long) {
@@ -424,33 +460,47 @@ protected ArrayList<Serializable> getSerializableObjects() {
 
 Other options
 =============
-* Turn off making a best guess when converting text into a token (allows free entry)
+* Turn off making a best guess when converting text into a token
 ```java
 performBestGuess(false);
 ```
-* Collapse the TokenCompleteTextView to a single line when it loses focus
+
+* Prevent the TokenCompleteTextView collapsing to a single line when it loses focus
 ```java
-allowCollapse(true);
+allowCollapse(false);
 ```
+
 * Change the set of characters that complete a token
 ```java
-setSplitChar(' ');
+setTokenizer(new CharacterTokenizer(Arrays.asList('.', ','), ","));
 ```
-OR
-```java
-char[] splitChar = {',', ';', ' '};
-setSplitChar(splitChar);
-```
+
 * Change the number of characters required to start showing suggestions
 ```java
 setThreshold(1);
 ```
+
 * Limit the total number of tokens in the field
 ```java
 setTokenLimit(10);
 ```
+
 * Prevent specific tokens from being deleted by overriding ```isTokenRemovable``` on your completion view
 
+#### Experimental mixed freeform text and token input support
+
+These options should allow you to build something similar to a Tweet composing view, but are likely to still have some edge cases with unusual behavior.
+
+* Allow mixed text and token input
+```java
+preventFreeFormText(false)
+```
+
+* Detect tokens based on their first character
+```java
+//Detect @usernames and #hashtags
+setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
+```
 
 License
 =======

@@ -769,18 +769,17 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 internalEditInProgress = true;
                 if (count > 0 && countSpans.length == 0) {
                     lastPosition++;
-                    CountSpan cs = new CountSpan(count, getContext(), getCurrentTextColor(),
-                            (int) getTextSize(), (int) maxTextWidth());
+                    CountSpan cs = new CountSpan(count);
                     try {
-                        text.insert(lastPosition, cs.text);
+                        text.insert(lastPosition, cs.getCountText());
                     } catch (IndexOutOfBoundsException ex) {
                         Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
                     }
                     float newWidth = Layout.getDesiredWidth(text, 0,
-                            lastPosition + cs.text.length(), lastLayout.getPaint());
+                            lastPosition + cs.getCountText().length(), lastLayout.getPaint());
                     //If the +x span will be moved off screen, move it one token in
                     if (newWidth > maxTextWidth()) {
-                        text.delete(lastPosition, lastPosition + cs.text.length());
+                        text.delete(lastPosition, lastPosition + cs.getCountText().length());
 
                         if (tokens.length > 0) {
                             TokenImageSpan token = tokens[tokens.length - 1];
@@ -791,19 +790,19 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                         }
 
                         try {
-                            text.insert(lastPosition, cs.text);
+                            text.insert(lastPosition, cs.getCountText());
                         } catch (IndexOutOfBoundsException ex) {
                             Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
                         }
                     }
 
-                    text.setSpan(cs, lastPosition, lastPosition + cs.text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    text.setSpan(cs, lastPosition, lastPosition + cs.getCountText().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 
                     // Remove all spans behind the count span and hold them in the hiddenSpans List
                     // The generic type information is not captured in TokenImageSpan.class so we have
                     // to perform a cast for the returned spans to coerce them to the proper generic type.
                     hiddenSpans = new ArrayList<>(Arrays.asList(
-                            (TokenImageSpan[]) text.getSpans(lastPosition + cs.text.length(), text.length(), TokenImageSpan.class)));
+                            (TokenImageSpan[]) text.getSpans(lastPosition + cs.getCountText().length(), text.length(), TokenImageSpan.class)));
                     for (TokenImageSpan span : hiddenSpans) {
                         removeSpan(span);
                     }

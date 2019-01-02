@@ -1,8 +1,12 @@
 package com.tokenautocomplete;
 
 import android.content.Context;
+import android.text.TextPaint;
+import android.text.style.CharacterStyle;
 import android.util.TypedValue;
 import android.widget.TextView;
+
+import java.util.Locale;
 
 /**
  * Span that displays +[x]
@@ -11,19 +15,24 @@ import android.widget.TextView;
  * @author mgod
  */
 
-class CountSpan extends ViewSpan {
-    String text = "";
+class CountSpan extends CharacterStyle {
+    private String countText;
 
-    CountSpan(int count, Context ctx, int textColor, int textSize, int maxWidth) {
-        super(new TextView(ctx), maxWidth);
-        TextView v = (TextView)view;
-        v.setTextColor(textColor);
-        v.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+    CountSpan(int count) {
+        super();
         setCount(count);
     }
 
+    @Override
+    public void updateDrawState(TextPaint textPaint) {
+        //Do nothing, we are using this span as a location marker
+    }
+
     void setCount(int c) {
-        text = "+" + c;
-        ((TextView)view).setText(text);
+        countText = String.format(Locale.getDefault(), "+%d", c);
+    }
+
+    String getCountText() {
+        return countText;
     }
 }

@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.typeText;
+import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
@@ -52,6 +53,7 @@ public class InputConnectionTest {
     public void keepsNonHintComposingText() throws Exception {
         onView(withId(R.id.searchView))
                 .check(matches(withText(containsString("enter"))))
+                .perform(click())
                 .perform(forceComposingText("bears"))
                 .check(matches(withText(containsString("bears"))))
                 .check(matches(withText(not(containsString("enter")))))
@@ -62,6 +64,7 @@ public class InputConnectionTest {
     public void keepsCloseNonHintComposingText() throws Exception {
         onView(withId(R.id.searchView))
                 .check(matches(withText(containsString("enter"))))
+                .perform(click())
                 .perform(forceComposingText("ente"))
                 .check(matches(withText(containsString("ente"))))
                 .check(matches(withText(not(containsString("enter")))))

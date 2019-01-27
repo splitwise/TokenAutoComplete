@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.text.Editable;
@@ -56,7 +57,8 @@ import java.util.List;
  *
  * @author mgod
  */
-public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteTextView implements TextView.OnEditorActionListener {
+public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteTextView
+        implements TextView.OnEditorActionListener, ViewSpan.Layout {
     //Logging
     public static final String TAG = "TokenAutoComplete";
 
@@ -83,13 +85,12 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private TokenListener<T> listener;
     private TokenSpanWatcher spanWatcher;
     private TokenTextWatcher textWatcher;
-    private ArrayList<T> objects;
-    private List<TokenCompleteTextView<T>.TokenImageSpan> hiddenSpans;
+    private CountSpan countSpan;
+    private @Nullable SpannableStringBuilder hiddenContent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private CharSequence prefix = "";
     private boolean hintVisible = false;
     private Layout lastLayout = null;
-    private boolean focusChanging = false;
     private boolean initialized = false;
     private boolean performBestGuess = true;
     private boolean preventFreeFormText = true;
@@ -135,12 +136,12 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         // Initialise variables
         setTokenizer(new CharacterTokenizer(Arrays.asList(',', ';'), ","));
-        objects = new ArrayList<>();
         Editable text = getText();
         assert null != text;
         spanWatcher = new TokenSpanWatcher();
         textWatcher = new TokenTextWatcher();
-        hiddenSpans = new ArrayList<>();
+        hiddenContent = null;
+        countSpan = new CountSpan();
 
         // Initialise TextChangedListeners
         addListeners();
@@ -167,7 +168,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 }
 
                 // Token limit check
-                if (tokenLimit != -1 && objects.size() == tokenLimit) {
+                if (tokenLimit != -1 && getObjects().size() == tokenLimit) {
                     return "";
                 }
 
@@ -320,7 +321,28 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @return List of tokens
      */
     public List<T> getObjects() {
-        return new ArrayList<>(objects);
+        ArrayList<T>objects = new ArrayList<>();
+        Editable text = getText();
+        if (hiddenContent != null) {
+            text = hiddenContent;
+        }
+        for (TokenImageSpan span: text.getSpans(0, text.length(), TokenImageSpan.class)) {
+            objects.add(span.getToken());
+        }
+        return objects;
+    }
+
+    /**
+     * Get the content entered in the text field, including hidden text when ellipsized
+     *
+     * @return CharSequence of the entered content
+     */
+    public CharSequence getContentText() {
+        if (hiddenContent != null) {
+            return hiddenContent;
+        } else {
+            return getText();
+        }
     }
 
     /**
@@ -389,7 +411,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     @SuppressWarnings("unused")
     public CharSequence getTextForAccessibility() {
-        if (objects.size() == 0) {
+        if (getObjects().size() == 0) {
             return getText();
         }
 
@@ -526,6 +548,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         return getWidth() - getPaddingLeft() - getPaddingRight();
     }
 
+    @Override
+    public int getMaxViewSpanWidth() {
+        return (int)maxTextWidth();
+    }
+
     boolean inInvalidate = false;
 
     @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -647,7 +674,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
             for (TokenImageSpan span : spans) {
                 if (span.view.isSelected()) {
-                    removeSpan(span);
+                    removeSpan(text, span);
                     return true;
                 }
             }
@@ -746,6 +773,17 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         lastLayout = getLayout(); //Used for checking text positions
     }
 
+    private static class EllipsizeCallback implements TextUtils.EllipsizeCallback {
+        int start = 0;
+        int end = 0;
+
+        @Override
+        public void ellipsized(int ellipsedStart, int ellipsedEnd) {
+            start = ellipsedStart;
+            end = ellipsedEnd;
+        }
+    }
+
     /**
      * Collapse the view by removing all the tokens not on the first line. Displays a "+x" token.
      * Restores the hidden tokens when the view gains focus.
@@ -753,109 +791,78 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @param hasFocus boolean indicating whether we have the focus or not.
      */
     public void performCollapse(boolean hasFocus) {
-        // Pause the spanWatcher
-        focusChanging = true;
+        internalEditInProgress = true;
         if (!hasFocus) {
-            Editable text = getText();
-            if (text != null && lastLayout != null) {
-                // Display +x thingy if appropriate
-                int lastPosition = lastLayout.getLineVisibleEnd(0);
-                TokenImageSpan[] tokens = text.getSpans(0, lastPosition, TokenImageSpan.class);
-                int count = objects.size() - tokens.length;
+            // Display +x thingy/ellipse if appropriate
+            final Editable text = getText();
+            if (text != null && hiddenContent == null && lastLayout != null) {
 
-                // Make sure we don't add more than 1 CountSpan
-                CountSpan[] countSpans = text.getSpans(0, lastPosition, CountSpan.class);
-
-                internalEditInProgress = true;
-                if (count > 0 && countSpans.length == 0) {
-                    lastPosition++;
-                    CountSpan cs = new CountSpan(count);
-                    try {
-                        text.insert(lastPosition, cs.getCountText());
-                    } catch (IndexOutOfBoundsException ex) {
-                        Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
-                    }
-                    float newWidth = Layout.getDesiredWidth(text, 0,
-                            lastPosition + cs.getCountText().length(), lastLayout.getPaint());
-                    //If the +x span will be moved off screen, move it one token in
-                    if (newWidth > maxTextWidth()) {
-                        text.delete(lastPosition, lastPosition + cs.getCountText().length());
-
-                        if (tokens.length > 0) {
-                            TokenImageSpan token = tokens[tokens.length - 1];
-                            lastPosition = text.getSpanStart(token);
-                            cs.setCount(count + 1);
-                        } else {
-                            lastPosition = prefix.length();
-                        }
-
-                        try {
-                            text.insert(lastPosition, cs.getCountText());
-                        } catch (IndexOutOfBoundsException ex) {
-                            Log.d(TAG, "performCollapse hit IndexOutOfBoundsException. This may be normal.", ex);
-                        }
-                    }
-
-                    text.setSpan(cs, lastPosition, lastPosition + cs.getCountText().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                    // Remove all spans behind the count span and hold them in the hiddenSpans List
-                    // The generic type information is not captured in TokenImageSpan.class so we have
-                    // to perform a cast for the returned spans to coerce them to the proper generic type.
-                    hiddenSpans = new ArrayList<>(Arrays.asList(
-                            (TokenImageSpan[]) text.getSpans(lastPosition + cs.getCountText().length(), text.length(), TokenImageSpan.class)));
-                    for (TokenImageSpan span : hiddenSpans) {
-                        removeSpan(span);
-                    }
+                float countWidth = 0;
+                if (preventFreeFormText) {
+                    //Assume the largest possible number of items for measurement
+                    countSpan.setCount(getObjects().size());
+                    countWidth = countSpan.getCountTextWidthForPaint(lastLayout.getPaint());
                 }
-                internalEditInProgress = false;
+
+                EllipsizeCallback ellipsizeCallback = new EllipsizeCallback();
+                //Ellipsize copies spans, so we need to stop listening to span changes here
+                text.removeSpan(spanWatcher);
+                CharSequence content = TextUtils.ellipsize(
+                        text, lastLayout.getPaint(), maxTextWidth() - countWidth,
+                        TextUtils.TruncateAt.END, false, ellipsizeCallback);
+
+                if (ellipsizeCallback.start != ellipsizeCallback.end) {
+                    hiddenContent = new SpannableStringBuilder(text);
+                    setText(content);
+                    TextUtils.copySpansFrom(text, 0, ellipsizeCallback.start, TokenImageSpan.class,
+                            getText(), 0);
+                    TextUtils.copySpansFrom(text, 0, hiddenContent.length(), TokenImageSpan.class,
+                            hiddenContent, 0);
+                    hiddenContent.setSpan(spanWatcher, 0, hiddenContent.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+
+                    if (preventFreeFormText) {
+                        int visibleCount = getText().getSpans(0, getText().length(), TokenImageSpan.class).length;
+                        countSpan.setCount(getObjects().size() - visibleCount);
+                        getText().replace(ellipsizeCallback.start, getText().length(), countSpan.getCountText());
+                        getText().setSpan(countSpan, ellipsizeCallback.start, getText().length(),
+                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    }
+                } else {
+                    //Need to go back to watching the current text
+                    getText().setSpan(spanWatcher, 0, getText().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                }
             }
         } else {
-            final Editable text = getText();
-            if (text != null) {
-                internalEditInProgress = true;
-                CountSpan[] counts = text.getSpans(0, text.length(), CountSpan.class);
-                for (CountSpan count : counts) {
-                    text.delete(text.getSpanStart(count), text.getSpanEnd(count));
-                    text.removeSpan(count);
-                }
-
-                // Restore the spans we have hidden
-                for (TokenImageSpan span : hiddenSpans) {
-                    insertSpan(span);
-                }
-                hiddenSpans.clear();
+            if (hiddenContent != null) {
+                setText(hiddenContent);
+                TextUtils.copySpansFrom(hiddenContent, 0, hiddenContent.length(),
+                        TokenImageSpan.class, getText(), 0);
+                hiddenContent = null;
 
                 if (hintVisible) {
                     setSelection(prefix.length());
                 } else {
-                    // Slightly delay moving the cursor to the end. Inserting spans seems to take
-                    // some time. (ugly, but what can you do :( )
-                    postDelayed(new Runnable() {
+                    post(new Runnable() {
                         @Override
                         public void run() {
-                            setSelection(text.length());
+                            setSelection(getText().length());
                         }
-                    }, 10);
+                    });
                 }
 
                 TokenSpanWatcher[] watchers = getText().getSpans(0, getText().length(), TokenSpanWatcher.class);
                 if (watchers.length == 0) {
-                    //Someone removes watchers? I'm pretty sure this isn't in this code... -mgod
-                    text.setSpan(spanWatcher, 0, text.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+                    //Span watchers can get removed in setText
+                    getText().setSpan(spanWatcher, 0, getText().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
-                internalEditInProgress = false;
             }
         }
-        // Start the spanWatcher
-        focusChanging = false;
+        internalEditInProgress = false;
     }
 
     @Override
     public void onFocusChanged(boolean hasFocus, int direction, Rect previous) {
         super.onFocusChanged(hasFocus, direction, previous);
-
-        // See if the user left any unfinished tokens and finish them
-        if (!hasFocus) performCompletion();
 
         // Clear sections when focus changes to avoid a token remaining selected
         clearSelections();
@@ -876,7 +883,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             return null;
         }
         View tokenView = getViewForObject(obj);
-        return new TokenImageSpan(tokenView, obj, (int) maxTextWidth());
+        return new TokenImageSpan(tokenView, obj);
     }
 
     @Override
@@ -941,7 +948,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
             return;
         }
-        if (tokenLimit != -1 && objects.size() == tokenLimit) return;
+        if (tokenLimit != -1 && getObjects().size() == tokenLimit) return;
         insertSpan(buildSpanForObject(object));
         if (getText() != null && isFocused()) setSelection(getText().length());
     }
@@ -971,31 +978,26 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     public void removeObjectSync(T object) {
         //To make sure all the appropriate callbacks happen, we just want to piggyback on the
         //existing code that handles deleting spans when the text changes
-        Editable text = getText();
-        if (text == null) return;
-
-        // If the object is currently hidden, remove it
-        ArrayList<TokenImageSpan> toRemove = new ArrayList<>();
-        for (TokenImageSpan span : hiddenSpans) {
-            if (span.getToken().equals(object)) {
-                toRemove.add(span);
-            }
+        ArrayList<Editable>texts = new ArrayList<>();
+        //If there is hidden content, it's important that we update it first
+        if (hiddenContent != null) {
+            texts.add(hiddenContent);
         }
-        for (TokenImageSpan span : toRemove) {
-            hiddenSpans.remove(span);
-            // Remove it from the state and fire the callback
-            spanWatcher.onSpanRemoved(text, span, 0, 0);
+        if (getText() != null) {
+            texts.add(getText());
+        }
+
+        // If the object is currently visible, remove it
+        for (Editable text: texts) {
+            TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
+            for (TokenImageSpan span : spans) {
+                if (span.getToken().equals(object)) {
+                    removeSpan(text, span);
+                }
+            }
         }
 
         updateCountSpan();
-
-        // If the object is currently visible, remove it
-        TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
-        for (TokenImageSpan span : spans) {
-            if (span.getToken().equals(object)) {
-                removeSpan(span);
-            }
-        }
     }
 
     /**
@@ -1032,39 +1034,37 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * Set the count span the current number of hidden objects
      */
     private void updateCountSpan() {
+        //No count span with free form text
+        if (!preventFreeFormText) { return; }
+
         Editable text = getText();
-        CountSpan[] counts = text.getSpans(0, text.length(), CountSpan.class);
-        int newCount = hiddenSpans.size();
-        for (CountSpan count : counts) {
-            internalEditInProgress = true;
-            if (newCount == 0) {
-                // No more hidden Objects: remove the CountSpan
-                text.delete(text.getSpanStart(count), text.getSpanEnd(count));
-                text.removeSpan(count);
-            } else {
-                // Update the CountSpan
-                count.setCount(hiddenSpans.size());
-                text.setSpan(count, text.getSpanStart(count), text.getSpanEnd(count), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            internalEditInProgress = false;
+
+        int visibleCount = getText().getSpans(0, getText().length(), TokenImageSpan.class).length;
+        countSpan.setCount(getObjects().size() - visibleCount);
+
+        SpannableStringBuilder spannedCountText = new SpannableStringBuilder(countSpan.getCountText());
+        spannedCountText.setSpan(countSpan, 0, spannedCountText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        internalEditInProgress = true;
+        int countStart = text.getSpanStart(countSpan);
+        if (countStart != -1) {
+            //Span is in the text, replace existing text
+            //This will also remove the span if the count is 0
+            text.replace(countStart, text.getSpanEnd(countSpan), spannedCountText);
+        } else {
+            text.append(spannedCountText);
         }
+
+        internalEditInProgress = false;
     }
 
     /**
      * Remove a span from the current EditText and fire the appropriate callback
      *
+     * @param text Editable to remove the span from
      * @param span TokenImageSpan to be removed
      */
-    private void removeSpan(TokenImageSpan span) {
-        Editable text = getText();
-        if (text == null) return;
-
-        //If the spanWatcher has been removed, we need to also manually trigger onSpanRemoved
-        TokenSpanWatcher[] spans = text.getSpans(0, text.length(), TokenSpanWatcher.class);
-        if (spans.length == 0) {
-            spanWatcher.onSpanRemoved(text, span, text.getSpanStart(span), text.getSpanEnd(span));
-        }
-
+    private void removeSpan(Editable text, TokenImageSpan span) {
         //We usually add whitespace after a token, so let's try to remove it as well if it's present
         int end = text.getSpanEnd(span);
         if (end < text.length() && text.charAt(end) == ' ') {
@@ -1086,45 +1086,37 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @param tokenSpan span to insert
      */
     private void insertSpan(TokenImageSpan tokenSpan) {
-        SpannableStringBuilder ssb = new SpannableStringBuilder(tokenizer.wrapTokenValue(tokenToString(tokenSpan.token)));
+        CharSequence ssb = tokenizer.wrapTokenValue(tokenToString(tokenSpan.token));
 
         Editable editable = getText();
         if (editable == null) return;
 
-        // If we're focused, or haven't hidden any objects yet, we can try adding it
-        if (!allowCollapse || isFocused() || hiddenSpans.isEmpty()) {
+        // If we haven't hidden any objects yet, we can try adding it
+        if (hiddenContent == null) {
             internalEditInProgress = true;
             int offset = editable.length();
             //There might be a hint visible...
             if (hintVisible) {
                 //...so we need to put the object in in front of the hint
                 offset = prefix.length();
-                editable.insert(offset, ssb);
             } else {
-                String completionText = currentCompletionText();
-                if (completionText != null && completionText.length() > 0) {
+                Range currentRange = getCurrentCandidateTokenRange();
+                if (currentRange.length() > 0) {
                     // The user has entered some text that has not yet been tokenized.
                     // Find the beginning of this text and insert the new token there.
-                    offset = TextUtils.indexOf(editable, completionText);
+                    offset = currentRange.start;
                 }
-                editable.insert(offset, ssb);
             }
-            editable.setSpan(tokenSpan, offset, offset + ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            editable.insert(offset, ssb);
             editable.insert(offset  + ssb.length(), " ");
+            editable.setSpan(tokenSpan, offset, offset + ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             internalEditInProgress = false;
-
-            // If we're not focused: collapse the view if necessary
-            if (!isFocused() && allowCollapse) performCollapse(false);
-
-            //In some cases, particularly the 1 to nth objects when not focused and restoring
-            //onSpanAdded doesn't get called
-            if (!objects.contains(tokenSpan.getToken())) {
-                spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
-            }
         } else {
-            hiddenSpans.add(tokenSpan);
-            //Need to manually call onSpanAdded here as we're not putting the span on the text
-            spanWatcher.onSpanAdded(editable, tokenSpan, 0, 0);
+            CharSequence tokenText = tokenizer.wrapTokenValue(tokenToString(tokenSpan.getToken()));
+            int start = hiddenContent.length();
+            hiddenContent.append(tokenText);
+            hiddenContent.append(" ");
+            hiddenContent.setSpan(tokenSpan, start, start + tokenText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             updateCountSpan();
         }
     }
@@ -1203,8 +1195,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         private T token;
 
         @SuppressWarnings("WeakerAccess")
-        public TokenImageSpan(View d, T token, int maxWidth) {
-            super(d, maxWidth);
+        public TokenImageSpan(View d, T token) {
+            super(d, TokenCompleteTextView.this);
             this.token = token;
         }
 
@@ -1236,7 +1228,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                     //If the view is already selected, we want to delete it
                 case Delete:
                     if (isTokenRemovable(token)) {
-                        removeSpan(this);
+                        removeSpan(text, this);
                     }
                     break;
                 case None:
@@ -1260,9 +1252,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanAdded(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState) {
                 TokenImageSpan token = (TokenImageSpan) what;
-                objects.add(token.getToken());
+
+                // If we're not focused: collapse the view if necessary
+                if (!isFocused() && allowCollapse) performCollapse(false);
 
                 if (listener != null)
                     listener.onTokenAdded(token.getToken());
@@ -1272,9 +1266,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         @SuppressWarnings("unchecked cast")
         @Override
         public void onSpanRemoved(Spannable text, Object what, int start, int end) {
-            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState && !focusChanging) {
+            if (what instanceof TokenCompleteTextView<?>.TokenImageSpan && !savingState) {
                 TokenImageSpan token = (TokenImageSpan) what;
-                objects.remove(token.getToken());
 
                 if (listener != null)
                     listener.onTokenRemoved(token.getToken());
@@ -1295,6 +1288,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             // count > 0 means something will be deleted
             if (count > 0 && getText() != null) {
                 Editable text = getText();
+
                 int end = start + count;
 
                 TokenImageSpan[] spans = text.getSpans(start, end, TokenImageSpan.class);
@@ -1318,8 +1312,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             for (TokenImageSpan token : spansCopy) {
                 //Only remove it if it's still present
                 if (text.getSpanStart(token) != -1 && text.getSpanEnd(token) != -1) {
-                    removeSpan(token);
+                    removeSpan(text, token);
                 }
+
             }
 
             clearSelections();
@@ -1333,14 +1328,14 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     protected List<Serializable> getSerializableObjects() {
         List<Serializable> serializables = new ArrayList<>();
-        for (Object obj : objects) {
+        for (Object obj : getObjects()) {
             if (obj instanceof Serializable) {
                 serializables.add((Serializable) obj);
             } else {
                 Log.e(TAG, "Unable to save '" + obj + "'");
             }
         }
-        if (serializables.size() != objects.size()) {
+        if (serializables.size() != getObjects().size()) {
             String message = "You should make your objects Serializable or Parcelable or\n" +
                     "override getSerializableObjects and convertSerializableArrayToObjectArray";
             Log.e(TAG, message);
@@ -1393,7 +1388,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         //Our core array is Parcelable, so use that interface
         if (Parcelable.class.isAssignableFrom(parameterizedClass)) {
             state.parcelableClassName = parameterizedClass.getName();
-            state.baseObjects = objects;
+            state.baseObjects = getObjects();
         } else {
             //Fallback on Serializable
             state.parcelableClassName = SavedState.SERIALIZABLE_PLACEHOLDER;
@@ -1556,7 +1551,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean canDeleteSelection(int beforeLength) {
-        if (objects.size() < 1) return true;
+        if (getObjects().size() < 1) return true;
 
         // if beforeLength is 1, we either have no selection or the call is coming from OnKey Event.
         // In these scenarios, getSelectionStart() will return the correct value.

@@ -17,26 +17,32 @@ import android.view.ViewGroup;
  */
 public class ViewSpan extends ReplacementSpan {
     protected View view;
-    private int maxWidth;
-    private boolean prepared;
+    private ViewSpan.Layout layout;
+    private int cachedMaxWidth = -1;
 
     @SuppressWarnings("WeakerAccess")
-    public ViewSpan(View view, int maxWidth) {
+    public ViewSpan(View view, ViewSpan.Layout layout) {
         super();
-        this.maxWidth = maxWidth;
+        this.layout = layout;
         this.view = view;
         this.view.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                              ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
     private void prepView() {
-        if (!prepared) {
-            int widthSpec = View.MeasureSpec.makeMeasureSpec(maxWidth, View.MeasureSpec.AT_MOST);
+        if (layout.getMaxViewSpanWidth() != cachedMaxWidth) {
+            cachedMaxWidth = layout.getMaxViewSpanWidth();
+
+            int spec = View.MeasureSpec.AT_MOST;
+            if (cachedMaxWidth == 0) {
+                //If the width is 0, allow the view to choose it's own content size
+                spec = View.MeasureSpec.UNSPECIFIED;
+            }
+            int widthSpec = View.MeasureSpec.makeMeasureSpec(cachedMaxWidth, spec);
             int heightSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
 
             view.measure(widthSpec, heightSpec);
             view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-            prepared = true;
         }
     }
 
@@ -70,5 +76,9 @@ public class ViewSpan extends ReplacementSpan {
         }
 
         return view.getRight();
+    }
+
+    public interface Layout {
+        int getMaxViewSpanWidth();
     }
 }

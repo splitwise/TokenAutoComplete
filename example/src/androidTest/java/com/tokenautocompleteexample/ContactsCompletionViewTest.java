@@ -88,6 +88,8 @@ public class ContactsCompletionViewTest {
                 assertEquals(Person.samplePeople().length, completionView.getObjects().size());
                 assertEquals(Person.samplePeople().length, listener.added.size());
                 completionView.performCollapse(false);
+                assertEquals(Person.samplePeople().length, completionView.getObjects().size());
+                assertEquals(Person.samplePeople().length, listener.added.size());
             }
         });
 
@@ -109,6 +111,22 @@ public class ContactsCompletionViewTest {
                 assertEquals(0, listener.ignored.size());
             }
         });
+
+        //Make sure going to 0 while collapsed, then adding an object doesn't hit a crash
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                completionView.addObjectSync(Person.samplePeople()[0]);
+                assertEquals(1, completionView.getObjects().size());
+                for (Person person: Person.samplePeople()) {
+                    completionView.addObjectSync(person);
+                }
+                assertEquals(Person.samplePeople().length + 1, completionView.getObjects().size());
+            }
+        });
+        onView(withId(R.id.searchView))
+                //The +count text is included
+                .check(matches(withText(containsString("+"))));
     }
 
     @Test

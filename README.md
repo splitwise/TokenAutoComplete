@@ -475,6 +475,12 @@ allowCollapse(false);
 setTokenizer(new CharacterTokenizer(Arrays.asList('.', ','), ","));
 ```
 
+* Detect tokens based on their first character
+```java
+//Detect @usernames and #hashtags
+setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
+```
+
 * Change the number of characters required to start showing suggestions
 ```java
 setThreshold(1);
@@ -489,17 +495,16 @@ setTokenLimit(10);
 
 #### Experimental mixed freeform text and token input support
 
-These options should allow you to build something similar to a Tweet composing view, but are likely to still have some edge cases with unusual behavior.
+These options should allow you to build something similar to a Tweet composing view, but is likely to still have some edge cases with unusual behavior.
 
 * Allow mixed text and token input
 ```java
-preventFreeFormText(false)
+preventFreeFormText(false);
 ```
 
-* Detect tokens based on their first character
+* Get the string value of the text content of the view, including reasonable string representations of the tokens. If `getContextText` is not using an acceptable string representation of the token, you can overrid `tokenToString` to change how the token is represented.
 ```java
-//Detect @usernames and #hashtags
-setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
+getContentText();
 ```
 
 License

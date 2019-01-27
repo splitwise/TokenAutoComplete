@@ -108,7 +108,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
 
             @Override
             public void afterTextChanged(Editable editable) {
-                taggedContentPreview.setText(tagView.getText().toString());
+                taggedContentPreview.setText(tagView.getContentText().toString());
             }
         });
 

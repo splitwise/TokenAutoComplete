@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.tokenautocomplete.ViewSpan;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,21 +26,36 @@ import static org.junit.Assert.assertEquals;
 @RunWith(AndroidJUnit4.class)
 public class ViewSpanTest {
 
+    private TestLayout layout;
+    private Context context;
+
+    private static class TestLayout implements ViewSpan.Layout {
+        int width = 100;
+
+        @Override
+        public int getMaxViewSpanWidth() {
+            return width;
+        }
+    }
+
     @Rule
     public ActivityTestRule<TokenActivity> activityRule = new ActivityTestRule<>(
             TokenActivity.class);
 
-    @Test
-    public void correctLineHeightWithBaseline() throws Exception {
-        // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getTargetContext();
+    @Before
+    public void setUp() {
+        context = InstrumentationRegistry.getTargetContext();
+        layout = new TestLayout();
+    }
 
-        TextView textView = new TextView(appContext);
+    @Test
+    public void correctLineHeightWithBaseline() {
+        TextView textView = new TextView(context);
         textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                                                             ViewGroup.LayoutParams.WRAP_CONTENT));
         textView.setText("A person's name");
 
-        ViewSpan span = new ViewSpan(textView, 100);
+        ViewSpan span = new ViewSpan(textView, layout);
         Paint paint = new Paint();
         Paint.FontMetricsInt fontMetricsInt = paint.getFontMetricsInt();
         int width = span.getSize(paint, "", 0, 0, fontMetricsInt);
@@ -49,19 +65,32 @@ public class ViewSpanTest {
     }
 
     @Test
-    public void correctLineHeightWithoutBaseline() throws Exception {
-        // Context of the app under test.
-        Context appContext = InstrumentationRegistry.getTargetContext();
-
-        View view = new View(appContext);
+    public void correctLineHeightWithoutBaseline() {
+        View view = new View(context);
         view.setMinimumHeight(1000);
         view.setMinimumWidth(1000);
 
-        ViewSpan span = new ViewSpan(view, 100);
+        ViewSpan span = new ViewSpan(view, layout);
         Paint paint = new Paint();
         Paint.FontMetricsInt fontMetricsInt = paint.getFontMetricsInt();
         int width = span.getSize(paint, "", 0, 0, fontMetricsInt);
-        assertEquals(width, 100);
+        assertEquals(100, width);
+        assertEquals(0, fontMetricsInt.bottom);
+        assertEquals(-view.getHeight(), fontMetricsInt.top);
+    }
+
+    @Test
+    public void usesIntrisicLayoutParametersWhenAllowedZeroWidth() {
+        View view = new View(context);
+        view.setMinimumHeight(1000);
+        view.setMinimumWidth(1000);
+
+        layout.width = 0;
+        ViewSpan span = new ViewSpan(view, layout);
+        Paint paint = new Paint();
+        Paint.FontMetricsInt fontMetricsInt = paint.getFontMetricsInt();
+        int width = span.getSize(paint, "", 0, 0, fontMetricsInt);
+        assertEquals(1000, width);
         assertEquals(0, fontMetricsInt.bottom);
         assertEquals(-view.getHeight(), fontMetricsInt.top);
     }

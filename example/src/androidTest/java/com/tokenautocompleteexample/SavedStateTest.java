@@ -1,9 +1,7 @@
 package com.tokenautocompleteexample;
 
-import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.text.Editable;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,7 +52,7 @@ public class SavedStateTest {
                 .perform(typeText("mar"));
 
         final List objects = activityRule.getActivity().completionView.getObjects();
-        final String text = activityRule.getActivity().completionView.getText().toString();
+        final String text = activityRule.getActivity().completionView.getContentText().toString();
         activityRule.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

@@ -1,10 +1,8 @@
 package com.tokenautocomplete;
 
-import android.content.Context;
+import android.text.Layout;
 import android.text.TextPaint;
 import android.text.style.CharacterStyle;
-import android.util.TypedValue;
-import android.widget.TextView;
 
 import java.util.Locale;
 
@@ -18,9 +16,9 @@ import java.util.Locale;
 class CountSpan extends CharacterStyle {
     private String countText;
 
-    CountSpan(int count) {
+    CountSpan() {
         super();
-        setCount(count);
+        countText = "";
     }
 
     @Override
@@ -29,10 +27,18 @@ class CountSpan extends CharacterStyle {
     }
 
     void setCount(int c) {
-        countText = String.format(Locale.getDefault(), "+%d", c);
+        if (c > 0) {
+            countText = String.format(Locale.getDefault(), " +%d", c);
+        } else {
+            countText = "";
+        }
     }
 
     String getCountText() {
         return countText;
+    }
+
+    float getCountTextWidthForPaint(TextPaint paint) {
+        return Layout.getDesiredWidth(countText, 0, countText.length(), paint);
     }
 }

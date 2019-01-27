@@ -123,6 +123,12 @@
                         android:inputType="text|textNoSuggestions|textMultiLine"
                         android:focusableInTouchMode="true" />
 
+                    <EditText
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/editText2"
+                        android:text="test focus loss" />
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

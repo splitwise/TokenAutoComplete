@@ -152,4 +152,24 @@ public class ContactsCompletionViewTest {
                 //The text should also reset completely
                 .check(matches(withText(String.format("To: %s, ", Person.samplePeople()[0].toString()))));
     }
+
+    @Test
+    public void ellipsizesPreservingPrefix() {
+        final ContactsCompletionView completionView = activityRule.getActivity().completionView;
+
+        activityRule.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //6th token is as wide as the view
+                completionView.addObjectSync(Person.samplePeople()[6]);
+                completionView.performCollapse(false);
+            }
+        });
+
+        onView(withId(R.id.searchView))
+                .check(matches(tokenCount(is(1))))
+                .check(matches(withText("To:  +1")));
+    }
+
+
 }

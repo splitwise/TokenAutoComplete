@@ -773,17 +773,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         lastLayout = getLayout(); //Used for checking text positions
     }
 
-    private static class EllipsizeCallback implements TextUtils.EllipsizeCallback {
-        int start = 0;
-        int end = 0;
-
-        @Override
-        public void ellipsized(int ellipsedStart, int ellipsedEnd) {
-            start = ellipsedStart;
-            end = ellipsedEnd;
-        }
-    }
-
     /**
      * Collapse the view by removing all the tokens not on the first line. Displays a "+x" token.
      * Restores the hidden tokens when the view gains focus.
@@ -797,38 +786,22 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             final Editable text = getText();
             if (text != null && hiddenContent == null && lastLayout != null) {
 
-                float countWidth = 0;
-                if (preventFreeFormText) {
-                    //Assume the largest possible number of items for measurement
-                    countSpan.setCount(getObjects().size());
-                    countWidth = countSpan.getCountTextWidthForPaint(lastLayout.getPaint());
-                }
-
-                EllipsizeCallback ellipsizeCallback = new EllipsizeCallback();
                 //Ellipsize copies spans, so we need to stop listening to span changes here
                 text.removeSpan(spanWatcher);
-                CharSequence content = TextUtils.ellipsize(
-                        text, lastLayout.getPaint(), maxTextWidth() - countWidth,
-                        TextUtils.TruncateAt.END, false, ellipsizeCallback);
 
-                if (ellipsizeCallback.start != ellipsizeCallback.end) {
+                CountSpan temp = preventFreeFormText ? countSpan : null;
+                Spanned ellipsized = SpanUtils.ellipsizeWithSpans(prefix, temp, getObjects().size(),
+                        lastLayout.getPaint(), text, maxTextWidth());
+
+                if (ellipsized != null) {
                     hiddenContent = new SpannableStringBuilder(text);
-                    setText(content);
-                    TextUtils.copySpansFrom(text, 0, ellipsizeCallback.start, TokenImageSpan.class,
-                            getText(), 0);
-                    TextUtils.copySpansFrom(text, 0, hiddenContent.length(), TokenImageSpan.class,
-                            hiddenContent, 0);
+                    setText(ellipsized);
+                    TextUtils.copySpansFrom(ellipsized, 0, ellipsized.length(),
+                            TokenImageSpan.class, getText(), 0);
+                    TextUtils.copySpansFrom(text, 0, hiddenContent.length(),
+                            TokenImageSpan.class, hiddenContent, 0);
                     hiddenContent.setSpan(spanWatcher, 0, hiddenContent.length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
-
-                    if (preventFreeFormText) {
-                        int visibleCount = getText().getSpans(0, getText().length(), TokenImageSpan.class).length;
-                        countSpan.setCount(getObjects().size() - visibleCount);
-                        getText().replace(ellipsizeCallback.start, getText().length(), countSpan.getCountText());
-                        getText().setSpan(countSpan, ellipsizeCallback.start, getText().length(),
-                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
                 } else {
-                    //Need to go back to watching the current text
                     getText().setSpan(spanWatcher, 0, getText().length(), Spanned.SPAN_INCLUSIVE_INCLUSIVE);
                 }
             }

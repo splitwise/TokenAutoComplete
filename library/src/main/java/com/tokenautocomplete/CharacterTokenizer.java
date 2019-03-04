@@ -21,7 +21,7 @@ public class CharacterTokenizer implements Tokenizer {
     private String tokenTerminator;
 
     @SuppressWarnings("WeakerAccess")
-    CharacterTokenizer(List<Character> splitChar, String tokenTerminator){
+    public CharacterTokenizer(List<Character> splitChar, String tokenTerminator){
         super();
         this.splitChar = new ArrayList<>(splitChar);
         this.tokenTerminator = tokenTerminator;

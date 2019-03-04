@@ -33,6 +33,8 @@ public interface TokenListener<T> {
 
 1. `convertSerializableArrayToObjectArray` has been renamed `convertSerializableObjectsToTypedObjects`.
 
+You may also find that the vertical alignment of your tokens has changed. It appears that the app compat text view layout is slightly different than the normal one. You will likely find that you need to adjust the baseline values for your token views.
+
 There have been a number of under the hood changes to the text handling, so if you've been directly accessing the text or using your own tokenizer, you may need to make more changes than this.
 
 ### Upgrading from 1.* to 2.0

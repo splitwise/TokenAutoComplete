@@ -1,6 +1,6 @@
 ### Version 3.0
 
-The `3.0.0-beta` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. This version is still a little unstable, so I would only recommend it if you are having trouble using version `2.0.8`. You can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
+The `3.0.0` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. If you're still on `2.*`, you can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
 
 ### Upgrading from 2.* to 3.0
 
@@ -8,11 +8,11 @@ For most developers, the migration should be fairly simple. Here are the likely 
 
 1. The view now inherits from `AppCompatAutoCompleteTextView`. You probably don't need to make any changes for this, but you will need to include the Android support library if you are not already.
 
-1. `setTokenDeleteStyle` has been removed. Something similar to the Clear style has been hardcoded in. This feature never worked reliably and caused a lot of crashes.
+2. `setTokenDeleteStyle` has been removed. Something similar to the Clear style has been hardcoded in. This feature never worked reliably and caused a lot of crashes.
 
-1. `addObject` has been renamed `addObjectAsync`. `removeObject` has been renamed `removeObjectAsync`. There are also `addObjectSync`/`removeObjectSync` versions that can be called from the UI thread and guarantee that `getObjects` will include these changes on the next call.
+3. `addObject` has been renamed `addObjectAsync`. `removeObject` has been renamed `removeObjectAsync`. There are also `addObjectSync`/`removeObjectSync` versions that can be called from the UI thread and guarantee that `getObjects` will include these changes on the next call.
 
-1. `setAllowDuplicates(false)` has been made more flexible to deal with issues around different kinds of equality. If you need the 2.* version of the behavior, add this to your `TokenCompleteTextView` subclass:
+4. `setAllowDuplicates(false)` has been made more flexible to deal with issues around different kinds of equality. If you need the 2.* version of the behavior, add this to your `TokenCompleteTextView` subclass:
 
 ```
 @Override
@@ -21,7 +21,7 @@ public boolean shouldIgnoreToken(T token) {
 }
 ```
 
-1. `TokenListener` has a new method you will need to add:
+5. `TokenListener` has a new method you will need to add:
 
 ```
 public interface TokenListener<T> {
@@ -31,7 +31,7 @@ public interface TokenListener<T> {
 }
 ```
 
-1. `convertSerializableArrayToObjectArray` has been renamed `convertSerializableObjectsToTypedObjects`.
+6. `convertSerializableArrayToObjectArray` has been renamed `convertSerializableObjectsToTypedObjects`.
 
 You may also find that the vertical alignment of your tokens has changed. It appears that the app compat text view layout is slightly different than the normal one. You will likely find that you need to adjust the baseline values for your token views.
 
@@ -58,7 +58,7 @@ Setup
 ### Gradle
 ```
 dependencies {
-    compile "com.splitwise:tokenautocomplete:3.0.0-beta@aar"
+    compile "com.splitwise:tokenautocomplete:3.0.0@aar"
 }
 ```
 ### Maven
@@ -66,7 +66,7 @@ dependencies {
 <dependency>
   <groupId>com.splitwise</groupId>
   <artifactId>tokenautocomplete</artifactId>
-  <version>3.0.0-beta</version>
+  <version>3.0.0</version>
   <type>aar</type>
 </dependency>
 ```
@@ -203,7 +203,7 @@ Layout code
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.tokenautocomplete.ContactsCompletionView
+    <com.yourpackagename.ContactsCompletionView
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
@@ -504,7 +504,7 @@ These options should allow you to build something similar to a Tweet composing v
 preventFreeFormText(false);
 ```
 
-* Get the string value of the text content of the view, including reasonable string representations of the tokens. If `getContextText` is not using an acceptable string representation of the token, you can overrid `tokenToString` to change how the token is represented.
+* Get the string value of the text content of the view, including reasonable string representations of the tokens. If `getContextText` is not using an acceptable string representation of the token, you can override `tokenToString` to change how the token is represented.
 ```java
 getContentText();
 ```

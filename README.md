@@ -1,6 +1,6 @@
 ### Version 3.0
 
-The `3.0.0` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. If you're still on `2.*`, you can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
+The `3.0.1` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. If you're still on `2.*`, you can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
 
 ### Upgrading from 2.* to 3.0
 
@@ -58,7 +58,7 @@ Setup
 ### Gradle
 ```
 dependencies {
-    compile "com.splitwise:tokenautocomplete:3.0.0@aar"
+    compile "com.splitwise:tokenautocomplete:3.0.1@aar"
 }
 ```
 ### Maven
@@ -66,7 +66,7 @@ dependencies {
 <dependency>
   <groupId>com.splitwise</groupId>
   <artifactId>tokenautocomplete</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1</version>
   <type>aar</type>
 </dependency>
 ```

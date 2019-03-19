@@ -52,19 +52,13 @@ public class TagTokenizer implements Tokenizer {
         int tokenStart = Integer.MAX_VALUE;
 
         for (int cursor = start; cursor < end; ++cursor) {
-            Character character = charSequence.charAt(cursor);
+            char character = charSequence.charAt(cursor);
 
             //Either this is a terminator, or we contain some content and are at the end of input
-            if (isTokenTerminator(character) || cursor == end - 1) {
+            if (isTokenTerminator(character)) {
                 //Is there some token content? Might just be two terminators in a row
                 if (cursor - 1 > tokenStart) {
-                    if (isTokenTerminator(character)) {
-                        result.add(new Range(tokenStart, cursor));
-                    } else {
-                        //If we're here and the character isn't a token terminator, make sure we include
-                        //the last character of the input
-                        result.add(new Range(tokenStart, cursor + 1));
-                    }
+                    result.add(new Range(tokenStart, cursor));
                 }
 
                 //mark that we don't have a candidate token start any more
@@ -75,6 +69,11 @@ public class TagTokenizer implements Tokenizer {
             if (tagPrefixes.contains(character)) {
                 tokenStart = cursor;
             }
+        }
+
+        if (end > tokenStart) {
+            //There was unterminated text after a start of token
+            result.add(new Range(tokenStart, end));
         }
 
         return result;

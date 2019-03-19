@@ -1,12 +1,15 @@
 package com.tokenautocomplete;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.RandomAccess;
 
 /**
  * Make sure the tokenizer finds the right boundaries
@@ -31,6 +34,7 @@ public class CharacterTokenizerTest {
         assertEquals("ponies", text.subSequence(ranges.get(1).start, ranges.get(1).end));
 
         ranges = tokenizer.findTokenRanges(text, 5, text.length());
+        assertEquals(", ponies", text.substring(5));
         assertEquals(Collections.singletonList(new Range(7, 13)), ranges);
 
         ranges = tokenizer.findTokenRanges(text, 1, text.length());
@@ -84,5 +88,41 @@ public class CharacterTokenizerTest {
 
         List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
         assertEquals(Arrays.asList(new Range(0, 7), new Range(12, 19), new Range(23, 31)), ranges);
+    }
+
+    @Test
+    public void allowsOneCharacterCandidateRangeMatches() {
+        CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(','), "");
+        String text = "a";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Collections.singletonList(new Range(0,1)), ranges);
+    }
+
+    @Test
+    public void allowsOneCharacterCandidateRangeMatchesWithWhitespace() {
+        CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(','), "");
+        String text = " a";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Collections.singletonList(new Range(1,2)), ranges);
+    }
+
+    @Test
+    public void doesntMatchWhitespaceAsCandidateTokenRange() {
+        CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(','), "");
+        String text = "test, ";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Collections.singletonList(new Range(0, 5)), ranges);
+    }
+
+    @Test
+    public void matchesSingleLetterTokens() {
+        CharacterTokenizer tokenizer = new CharacterTokenizer(Collections.singletonList(','), "");
+        String text = "t,r, a,,b";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Arrays.asList(new Range(0, 2), new Range(2,4), new Range(5,7), new Range(8,9)), ranges);
     }
 }

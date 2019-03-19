@@ -508,7 +508,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 candidateStringStart = spanEnd;
             }
             int spanStart = editable.getSpanStart(span);
-            if (candidateStringEnd < spanStart && cursorEndPosition <= spanEnd) {
+            if (candidateStringEnd > spanStart && cursorEndPosition <= spanEnd) {
                 candidateStringEnd = spanStart;
             }
         }

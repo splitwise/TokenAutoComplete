@@ -2,6 +2,7 @@ package com.tokenautocompleteexample;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +26,10 @@ public class TagCompletionView extends TokenCompleteTextView<Tag> {
 
     @Override
     protected Tag defaultObject(String completionText) {
-        return new Tag(completionText.charAt(0), completionText.substring(1, completionText.length()));
+        if (completionText.length() == 1) {
+            return null;
+        } else {
+            return new Tag(completionText.charAt(0), completionText.substring(1, completionText.length()));
+        }
     }
 }

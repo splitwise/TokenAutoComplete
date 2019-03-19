@@ -39,6 +39,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
 
         completionView = (ContactsCompletionView)findViewById(R.id.searchView);
         completionView.setAdapter(adapter);
+        completionView.setThreshold(1);
         completionView.setTokenListener(this);
         completionView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
         completionView.addTextChangedListener(new TextWatcher() {
@@ -92,6 +93,7 @@ public class TokenActivity extends AppCompatActivity implements TokenCompleteTex
         tagView.setTokenizer(new TagTokenizer(Arrays.asList('@', '#')));
         tagView.setAdapter(new TagAdapter(this, R.layout.tag_layout, Tag.sampleTags()));
         tagView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
+        tagView.setThreshold(1);
 
         final TextView taggedContentPreview = findViewById(R.id.composedValue);
 

@@ -30,7 +30,7 @@ public class TagTokenizerTest {
     @Test
     public void testSequentialTagDetection() {
         String test = "@@bears#tokens#";
-        assertEquals(Arrays.asList(new Range(1,7), new Range(7,14)),
+        assertEquals(Arrays.asList(new Range(1,7), new Range(7,14), new Range(14, 15)),
                 tokenizer.findTokenRanges(test, 0, test.length()));
     }
 
@@ -46,5 +46,29 @@ public class TagTokenizerTest {
         String test = "@token       @ asdm      @asjdfhajks      sdfasdf";
         assertEquals(Arrays.asList(new Range(0,6), new Range(25, 36)),
                 tokenizer.findTokenRanges(test, 0, test.length()));
+    }
+
+    @Test
+    public void allowsOneCharacterCandidateRangeMatches() {
+        String text = "#";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Collections.singletonList(new Range(0,1)), ranges);
+    }
+
+    @Test
+    public void allowsOneCharacterCandidateRangeMatchesWithWhitespace() {
+        String text = " #";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Collections.singletonList(new Range(1,2)), ranges);
+    }
+
+    @Test
+    public void matchesSingleLetterTokens() {
+        String text = "#t#r #a##b";
+
+        List<Range> ranges = tokenizer.findTokenRanges(text, 0, text.length());
+        assertEquals(Arrays.asList(new Range(0, 2), new Range(2,4), new Range(5,7), new Range(8,10)), ranges);
     }
 }

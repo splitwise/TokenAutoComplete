@@ -50,7 +50,7 @@ public class CharacterTokenizer implements Tokenizer {
         int tokenStart = start;
 
         for (int cursor = start; cursor < end; ++cursor) {
-            Character character = charSequence.charAt(cursor);
+            char character = charSequence.charAt(cursor);
 
             //Avoid including leading whitespace, tokenStart will match the cursor as long as we're at the start
             if (tokenStart == cursor && Character.isWhitespace(character)) {
@@ -59,7 +59,12 @@ public class CharacterTokenizer implements Tokenizer {
 
             //Either this is a split character, or we contain some content and are at the end of input
             if (splitChar.contains(character) || cursor == end - 1) {
-                if (cursor > tokenStart) {
+                boolean hasTokenContent =
+                        //There is token content befor the current character
+                        cursor > tokenStart ||
+                        //If the current single character is valid token content, not a split char or whitespace
+                        (cursor == tokenStart && !splitChar.contains(character));
+                if (hasTokenContent) {
                     //There is some token content
                     //Add one to range end as the end of the ranges is not inclusive
                     result.add(new Range(tokenStart, cursor + 1));

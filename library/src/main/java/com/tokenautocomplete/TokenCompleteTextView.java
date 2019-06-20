@@ -1619,4 +1619,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             return super.setComposingText(text, newCursorPosition);
         }
     }
+
+    @Override
+    protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
+        super.onTextChanged(text, start, lengthBefore, lengthAfter);
+        lastCompletionText = null;
+    }
 }

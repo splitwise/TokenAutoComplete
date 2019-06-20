@@ -539,6 +539,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         Editable editable = getText();
         Range currentRange = getCurrentCandidateTokenRange();
 
+        Log.d(TAG, "Current completion range: " + currentRange);
+
         String result = TextUtils.substring(editable, currentRange.start, currentRange.end);
         Log.d(TAG, "Current completion text: " + result);
         return result;
@@ -1610,11 +1612,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             //Also, some keyboards don't correctly respect the replacement if the replacement
             //is the same number of characters as the replacement span
             //We need to ignore this value if it's available
-            if (lastCompletionText != null && text != null &&
-                    text.length() == lastCompletionText.length() + 1 &&
-                    text.toString().startsWith(lastCompletionText)) {
-                text = text.subSequence(text.length() - 1, text.length());
-            }
+//            if (lastCompletionText != null && text != null &&
+//                    text.length() == lastCompletionText.length() + 1 &&
+//                    text.toString().startsWith(lastCompletionText)) {
+//                text = text.subSequence(text.length() - 1, text.length());
+//            }
 
             return super.setComposingText(text, newCursorPosition);
         }

@@ -7,7 +7,7 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 
-class SpanUtils {
+public class SpanUtils {
 
     private static class EllipsizeCallback implements TextUtils.EllipsizeCallback {
         int start = 0;
@@ -21,7 +21,7 @@ class SpanUtils {
     }
 
     @Nullable
-    static Spanned ellipsizeWithSpans(@Nullable CharSequence prefix, @Nullable CountSpan countSpan,
+    public static Spanned ellipsizeWithSpans(@Nullable CharSequence prefix, @Nullable CountSpan countSpan,
                                            int tokenCount, @NonNull TextPaint paint,
                                            @NonNull CharSequence originalText, float maxWidth) {
 
@@ -33,10 +33,12 @@ class SpanUtils {
         }
 
         EllipsizeCallback ellipsizeCallback = new EllipsizeCallback();
-        Spanned tempEllipsized = (Spanned) TextUtils.ellipsize(originalText, paint, maxWidth - countWidth,
+        CharSequence tempEllipsized = TextUtils.ellipsize(originalText, paint, maxWidth - countWidth,
                 TextUtils.TruncateAt.END, false, ellipsizeCallback);
         SpannableStringBuilder ellipsized = new SpannableStringBuilder(tempEllipsized);
-        TextUtils.copySpansFrom(tempEllipsized, 0, tempEllipsized.length(), Object.class, ellipsized, 0);
+        if (tempEllipsized instanceof Spanned) {
+            TextUtils.copySpansFrom((Spanned)tempEllipsized, 0, tempEllipsized.length(), Object.class, ellipsized, 0);
+        }
 
         if (prefix != null && prefix.length() > ellipsizeCallback.start) {
             //We ellipsized part of the prefix, so put it back

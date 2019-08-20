@@ -565,6 +565,29 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     @Override
+    public void setShadowLayer(float radius, float dx, float dy, int color) {
+        try {
+            super.setShadowLayer(radius, dx, dy, color);
+        } catch (IndexOutOfBoundsException e) {
+            // noop. Bug on API 28
+            /*
+            java.lang.IndexOutOfBoundsException: charAt: 0 >= length 0
+            at android.text.SpannableStringBuilder.charAt(SpannableStringBuilder.java:123)
+            at android.text.CharSequenceCharacterIterator.current(CharSequenceCharacterIterator.java:58)
+            at android.text.CharSequenceCharacterIterator.first(CharSequenceCharacterIterator.java:44)
+            at android.icu.text.RuleBasedBreakIterator.CISetIndex32(RuleBasedBreakIterator.java:1123)
+            at android.icu.text.RuleBasedBreakIterator.isBoundary(RuleBasedBreakIterator.java:503)
+            at android.text.method.WordIterator.isBoundary(WordIterator.java:95)
+            at android.widget.Editor$SelectionHandleView.positionAtCursorOffset(Editor.java:5467)
+            at android.widget.Editor$HandleView.invalidate(Editor.java:4577)
+            at android.widget.Editor$SelectionModifierCursorController.invalidateHandles(Editor.java:6145)
+            at android.widget.Editor.invalidateHandlesAndActionMode(Editor.java:1985)
+            at android.widget.TextView.setShadowLayer(TextView.java:4409)
+             */
+        }
+    }
+
+    @Override
     public void invalidate() {
         //Need to force the TextView private mEditor variable to reset as well on API 16 and up
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {

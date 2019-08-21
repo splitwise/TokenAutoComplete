@@ -1,25 +1,17 @@
 package com.tokenautocompleteexample
 
-import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.support.annotation.VisibleForTesting
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.AttributeSet
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.TabHost
 import android.widget.TextView
-
 import com.tokenautocomplete.TagTokenizer
 import com.tokenautocomplete.TokenCompleteTextView
 import kotlinx.android.synthetic.main.activity_main.*
-
-import java.util.Arrays
-import java.util.Random
+import java.util.*
 
 class TokenActivity : AppCompatActivity(), TokenCompleteTextView.TokenListener<Person> {
     @VisibleForTesting val completionView: ContactsCompletionView = searchView
@@ -30,7 +22,7 @@ class TokenActivity : AppCompatActivity(), TokenCompleteTextView.TokenListener<P
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tabs = findViewById<View>(R.id.tabHost) as TabHost
+        val tabs = tabHost
         tabs.setup()
         tabs.addTab(tabs.newTabSpec("Contacts").setContent(R.id.contactsFrame).setIndicator("Contacts"))
         tabs.addTab(tabs.newTabSpec("Composer").setContent(R.id.hashtagsFrame).setIndicator("Composer"))

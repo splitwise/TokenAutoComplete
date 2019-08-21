@@ -1,5 +1,6 @@
 apply plugin: 'com.android.library'
-
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
@@ -33,6 +34,7 @@ android {
 dependencies {
     testImplementation 'junit:junit:4.12'
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation "com.android.support:support-annotations:$project.ANDROID_SUPPORT_VERSION"
     implementation "com.android.support:appcompat-v7:$project.ANDROID_SUPPORT_VERSION"
 }

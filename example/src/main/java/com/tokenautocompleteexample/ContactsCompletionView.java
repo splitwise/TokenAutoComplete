@@ -74,4 +74,9 @@ public class ContactsCompletionView extends TokenCompleteTextView<Person> {
         convertSelectionToString(person);
         replaceText(currentCompletionText());
     }
+
+    @Override
+    protected CharSequence tokenToString(Person token) {
+        return token.getEmail();
+    }
 }

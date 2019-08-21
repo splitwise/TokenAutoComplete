@@ -706,7 +706,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
         }
 
-
         if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
             //Don't let users select the prefix
             setSelection(prefix.length());

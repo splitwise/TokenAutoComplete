@@ -11,7 +11,7 @@ import java.util.List;
  * Created by mgod on 9/12/13.
  * @author mgod
  */
-class Person implements Parcelable {
+public class Person implements Parcelable {
     private String name;
     private String email;
 

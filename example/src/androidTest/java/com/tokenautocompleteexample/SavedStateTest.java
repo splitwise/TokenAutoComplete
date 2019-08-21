@@ -33,8 +33,8 @@ public class SavedStateTest {
                 .perform(typeText("mar,"))
                 .check(matches(emailForPerson(2, is("marshall@example.com"))));
 
-        final List objects = activityRule.getActivity().completionView.getObjects();
-        final String text = activityRule.getActivity().completionView.getText().toString();
+        final List objects = activityRule.getActivity().getCompletionView().getObjects();
+        final String text = activityRule.getActivity().getCompletionView().getText().toString();
         activityRule.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -51,8 +51,8 @@ public class SavedStateTest {
         onView(withId(R.id.searchView))
                 .perform(typeText("mar"));
 
-        final List objects = activityRule.getActivity().completionView.getObjects();
-        final String text = activityRule.getActivity().completionView.getContentText().toString();
+        final List objects = activityRule.getActivity().getCompletionView().getObjects();
+        final String text = activityRule.getActivity().getCompletionView().getContentText().toString();
         activityRule.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

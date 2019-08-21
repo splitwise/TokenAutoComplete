@@ -673,11 +673,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         return handled;
     }
 
+    // FIXME: selection on right side of token
     @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
-        //Never let users select text
-        //selEnd = selStart;
-
+        // Clear selection if token is selectable
         if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
             Editable text = getText();
             if (text != null) {

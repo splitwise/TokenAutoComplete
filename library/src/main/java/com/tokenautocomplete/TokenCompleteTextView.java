@@ -146,7 +146,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         addListeners();
 
         setTextIsSelectable(false);
-        setLongClickable(false);
+        setLongClickable(true);
 
         //In theory, get the soft keyboard to not supply suggestions. very unreliable
         setInputType(getInputType() |

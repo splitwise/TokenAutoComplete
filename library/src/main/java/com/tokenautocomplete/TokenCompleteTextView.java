@@ -2,9 +2,7 @@ package com.tokenautocomplete;
 
 import android.annotation.TargetApi;
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -20,12 +18,10 @@ import android.text.NoCopySpan;
 import android.text.Selection;
 import android.text.SpanWatcher;
 import android.text.Spannable;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -88,7 +84,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private CountSpan countSpan;
     private @Nullable SpannableStringBuilder hiddenContent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
-    private CharSequence prefix = "";
     private Layout lastLayout = null;
     private boolean initialized = false;
     private boolean performBestGuess = true;
@@ -181,22 +176,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                     }
                 }
 
-                //We need to not do anything when we would delete the prefix
-                if (destinationStart < prefix.length()) {
-                    //when setText is called, which should only be called during restoring,
-                    //destinationStart and destinationEnd are 0. If not checked, it will clear out
-                    //the prefix.
-                    //This is why we need to return null in this if condition to preserve state.
-                    if (destinationStart == 0 && destinationEnd == 0) {
-                        return null;
-                    } else if (destinationEnd <= prefix.length()) {
-                        //Don't do anything
-                        return prefix.subSequence(destinationStart, destinationEnd);
-                    } else {
-                        //Delete everything up to the prefix
-                        return prefix.subSequence(destinationStart, prefix.length());
-                    }
-                }
                 return null;
             }
         }});
@@ -445,11 +424,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private Range getCurrentCandidateTokenRange() {
         Editable editable = getText();
         int cursorEndPosition = getSelectionEnd();
-        int candidateStringStart = prefix.length();
+        int candidateStringStart = 0;
         int candidateStringEnd = editable.length();
 
         //We want to find the largest string that contains the selection end that is not already tokenized
-        TokenImageSpan[] spans = editable.getSpans(prefix.length(), editable.length(), TokenImageSpan.class);
+        TokenImageSpan[] spans = editable.getSpans(0, editable.length(), TokenImageSpan.class);
         for (TokenImageSpan span : spans) {
             int spanEnd = editable.getSpanEnd(span);
             if (candidateStringStart < spanEnd && cursorEndPosition >= spanEnd) {
@@ -697,7 +676,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
         //Never let users select text
-        selEnd = selStart;
+        //selEnd = selStart;
 
         if (tokenClickStyle != null && tokenClickStyle.isSelectable()) {
             Editable text = getText();
@@ -706,29 +685,24 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
         }
 
-        if (prefix != null && (selStart < prefix.length() || selEnd < prefix.length())) {
-            //Don't let users select the prefix
-            setSelection(prefix.length());
-        } else {
-            Editable text = getText();
-            if (text != null) {
-                //Make sure if we are in a span, we select the spot 1 space after the span end
-                TokenImageSpan[] spans = text.getSpans(selStart, selEnd, TokenImageSpan.class);
-                for (TokenImageSpan span : spans) {
-                    int spanEnd = text.getSpanEnd(span);
-                    if (selStart <= spanEnd && text.getSpanStart(span) < selStart) {
-                        if (spanEnd == text.length())
-                            setSelection(spanEnd);
-                        else
-                            setSelection(spanEnd + 1);
-                        return;
-                    }
+        Editable text = getText();
+        if (text != null) {
+            //Make sure if we are in a span, we select the spot 1 space after the span end
+            TokenImageSpan[] spans = text.getSpans(selStart, selEnd, TokenImageSpan.class);
+            for (TokenImageSpan span : spans) {
+                int spanEnd = text.getSpanEnd(span);
+                if (selStart <= spanEnd && text.getSpanStart(span) < selStart) {
+                    if (spanEnd == text.length())
+                        setSelection(spanEnd);
+                    else
+                        setSelection(spanEnd + 1);
+                    return;
                 }
-
             }
 
-            super.onSelectionChanged(selStart, selEnd);
         }
+
+        super.onSelectionChanged(selStart, selEnd);
     }
 
     @Override
@@ -754,7 +728,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 text.removeSpan(spanWatcher);
 
                 CountSpan temp = preventFreeFormText ? countSpan : null;
-                Spanned ellipsized = SpanUtils.ellipsizeWithSpans(prefix, temp, getObjects().size(),
+                Spanned ellipsized = SpanUtils.ellipsizeWithSpans(temp, getObjects().size(),
                         lastLayout.getPaint(), text, maxTextWidth());
 
                 if (ellipsized != null) {
@@ -1071,7 +1045,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             this.token = token;
         }
 
-        @SuppressWarnings("WeakerAccess")
         public T getToken() {
             return this.token;
         }
@@ -1249,7 +1222,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         savingState = false;
         SavedState state = new SavedState(superState);
 
-        state.prefix = prefix;
         state.allowCollapse = allowCollapse;
         state.performBestGuess = performBestGuess;
         state.preventFreeFormText = preventFreeFormText;
@@ -1289,8 +1261,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         super.onRestoreInstanceState(ss.getSuperState());
 
         internalEditInProgress = true;
-        setText(ss.prefix);
-        prefix = ss.prefix;
         internalEditInProgress = false;
         allowCollapse = ss.allowCollapse;
         performBestGuess = ss.performBestGuess;
@@ -1329,7 +1299,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private static class SavedState extends BaseSavedState {
         static final String SERIALIZABLE_PLACEHOLDER = "Serializable";
 
-        CharSequence prefix;
         boolean allowCollapse;
         boolean performBestGuess;
         boolean preventFreeFormText;
@@ -1342,7 +1311,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         @SuppressWarnings("unchecked")
         SavedState(Parcel in) {
             super(in);
-            prefix = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
             allowCollapse = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
             preventFreeFormText = in.readInt() != 0;
@@ -1376,7 +1344,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         @Override
         public void writeToParcel(@NonNull Parcel out, int flags) {
             super.writeToParcel(out, flags);
-            TextUtils.writeToParcel(prefix, out, 0);
             out.writeInt(allowCollapse ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(preventFreeFormText ? 1 : 0);
@@ -1471,7 +1438,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             if (!canDeleteSelection(beforeLength)) return false;
 
             //Shouldn't be able to delete prefix, so don't do anything
-            if (getSelectionStart() <= prefix.length()) {
+            if (getSelectionStart() <= 0) {
                 beforeLength = 0;
                 return deleteSelectedObject() || super.deleteSurroundingText(beforeLength, afterLength);
             }

@@ -15,7 +15,7 @@ public class SpanUtilsTest {
     public void testSpanUtilsHandlesNonSpannableTextUtilsResponse() {
         TextPaint dummy = new TextPaint();
         //this used to crash, so we're making sure it runs and returns null
-        Spanned ellipsized = SpanUtils.ellipsizeWithSpans(null,
+        Spanned ellipsized = SpanUtils.ellipsizeWithSpans(
                 null, 0, dummy, "", 150);
         assertNull(ellipsized);
     }

@@ -14,9 +14,9 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
 class TokenActivity : AppCompatActivity(), TokenCompleteTextView.TokenListener<Person> {
-    @VisibleForTesting val completionView: ContactsCompletionView = searchView
-    private val people = Person.samplePeople()
-    private val adapter = PersonAdapter(this, R.layout.person_layout, people)
+    @VisibleForTesting val completionView: ContactsCompletionView by lazy { searchView }
+    private val people by lazy { Person.samplePeople() }
+    private val adapter by lazy { PersonAdapter(this, R.layout.person_layout, people) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

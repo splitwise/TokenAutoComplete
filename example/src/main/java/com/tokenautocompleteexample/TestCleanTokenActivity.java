@@ -71,10 +71,5 @@ public class TestCleanTokenActivity extends AppCompatActivity {
         completionView = findViewById(R.id.searchView);
         completionView.setAdapter(adapter);
         completionView.setTokenClickStyle(TokenCompleteTextView.TokenClickStyle.Select);
-
-
-        if (savedInstanceState == null) {
-            completionView.setPrefix("To: ", Color.parseColor("blue"));
-        }
     }
 }

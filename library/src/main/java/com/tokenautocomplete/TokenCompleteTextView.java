@@ -89,7 +89,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private @Nullable SpannableStringBuilder hiddenContent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private CharSequence prefix = "";
-    private boolean hintVisible = false;
     private Layout lastLayout = null;
     private boolean initialized = false;
     private boolean performBestGuess = true;
@@ -266,53 +265,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     public boolean isTokenRemovable(@SuppressWarnings("unused") T token) {
         return true;
-    }
-
-    /**
-     * A String of text that is shown before all the tokens inside the EditText
-     * (Think "To: " in an email address field. I would advise against this: use a label and a hint.
-     *
-     * @param p String with the hint
-     */
-    public void setPrefix(CharSequence p) {
-        //Have to clear and set the actual text before saving the prefix to avoid the prefix filter
-        CharSequence prevPrefix = prefix;
-        prefix = p;
-        Editable text = getText();
-        if (text != null) {
-            internalEditInProgress = true;
-            if (prevPrefix != null) {
-                text.replace(0, prevPrefix.length(), p);
-            } else {
-                text.insert(0, p);
-            }
-            internalEditInProgress = false;
-        }
-        //prefix = p;
-
-        updateHint();
-    }
-
-    /**
-     * <p>You can get a color integer either using
-     * {@link android.support.v4.content.ContextCompat#getColor(android.content.Context, int)}
-     * or with {@link android.graphics.Color#parseColor(String)}.</p>
-     * <p>{@link android.graphics.Color#parseColor(String)}
-     * accepts these formats (copied from android.graphics.Color):
-     * You can use: '#RRGGBB',  '#AARRGGBB'
-     * or one of the following names: 'red', 'blue', 'green', 'black', 'white',
-     * 'gray', 'cyan', 'magenta', 'yellow', 'lightgray', 'darkgray', 'grey',
-     * 'lightgrey', 'darkgrey', 'aqua', 'fuchsia', 'lime', 'maroon', 'navy',
-     * 'olive', 'purple', 'silver', 'teal'.</p>
-     *
-     * @param prefix prefix
-     * @param color A single color value in the form 0xAARRGGBB.
-     */
-    @SuppressWarnings("SameParameterValue")
-    public void setPrefix(CharSequence prefix, int color) {
-        SpannableString spannablePrefix = new SpannableString(prefix);
-        spannablePrefix.setSpan(new ForegroundColorSpan(color), 0, spannablePrefix.length(), 0);
-        setPrefix(spannablePrefix);
     }
 
     /**
@@ -495,10 +447,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         int cursorEndPosition = getSelectionEnd();
         int candidateStringStart = prefix.length();
         int candidateStringEnd = editable.length();
-        if (hintVisible) {
-            //Don't try to search the hint for possible tokenizable strings
-            candidateStringEnd = candidateStringStart;
-        }
 
         //We want to find the largest string that contains the selection end that is not already tokenized
         TokenImageSpan[] spans = editable.getSpans(prefix.length(), editable.length(), TokenImageSpan.class);
@@ -534,8 +482,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     }
 
     protected String currentCompletionText() {
-        if (hintVisible) return ""; //Can't have any text if the hint is visible
-
         Editable editable = getText();
         Range currentRange = getCurrentCandidateTokenRange();
 
@@ -569,6 +515,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         try {
             super.setShadowLayer(radius, dx, dy, color);
         } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
             // noop. Bug on API 28
             /*
             java.lang.IndexOutOfBoundsException: charAt: 0 >= length 0
@@ -599,7 +546,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     @Override
     public boolean enoughToFilter() {
-        if (tokenizer == null || hintVisible) {
+        if (tokenizer == null) {
             return false;
         }
 
@@ -745,15 +692,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             handled = super.onTouchEvent(event);
         }
         return handled;
-
     }
 
     @Override
     protected void onSelectionChanged(int selStart, int selEnd) {
-        if (hintVisible) {
-            //Don't let users select the hint
-            selStart = 0;
-        }
         //Never let users select text
         selEnd = selStart;
 
@@ -835,16 +777,12 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                         TokenImageSpan.class, getText(), 0);
                 hiddenContent = null;
 
-                if (hintVisible) {
-                    setSelection(prefix.length());
-                } else {
-                    post(new Runnable() {
-                        @Override
-                        public void run() {
-                            setSelection(getText().length());
-                        }
-                    });
-                }
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        setSelection(getText().length());
+                    }
+                });
 
                 TokenSpanWatcher[] watchers = getText().getSpans(0, getText().length(), TokenSpanWatcher.class);
                 if (watchers.length == 0) {
@@ -1092,16 +1030,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             internalEditInProgress = true;
             int offset = editable.length();
             //There might be a hint visible...
-            if (hintVisible) {
-                //...so we need to put the object in in front of the hint
-                offset = prefix.length();
-            } else {
-                Range currentRange = getCurrentCandidateTokenRange();
-                if (currentRange.length() > 0) {
-                    // The user has entered some text that has not yet been tokenized.
-                    // Find the beginning of this text and insert the new token there.
-                    offset = currentRange.start;
-                }
+            Range currentRange = getCurrentCandidateTokenRange();
+            if (currentRange.length() > 0) {
+                // The user has entered some text that has not yet been tokenized.
+                // Find the beginning of this text and insert the new token there.
+                offset = currentRange.start;
             }
             editable.insert(offset, ssb);
             editable.insert(offset  + ssb.length(), " ");
@@ -1114,63 +1047,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             hiddenContent.append(" ");
             hiddenContent.setSpan(tokenSpan, start, start + tokenText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             updateCountSpan();
-        }
-    }
-
-    private void updateHint() {
-        Editable text = getText();
-        CharSequence hintText = getHint();
-        if (text == null || hintText == null) {
-            return;
-        }
-
-        //Show hint if we need to
-        if (prefix.length() > 0) {
-            HintSpan[] hints = text.getSpans(0, text.length(), HintSpan.class);
-            HintSpan hint = null;
-            int testLength = prefix.length();
-            if (hints.length > 0) {
-                hint = hints[0];
-                testLength += text.getSpanEnd(hint) - text.getSpanStart(hint);
-            }
-
-            if (text.length() == testLength) {
-                hintVisible = true;
-
-                if (hint != null) {
-                    return;//hint already visible
-                }
-
-                //We need to display the hint manually
-                Typeface tf = getTypeface();
-                int style = Typeface.NORMAL;
-                if (tf != null) {
-                    style = tf.getStyle();
-                }
-                ColorStateList colors = getHintTextColors();
-
-                HintSpan hintSpan = new HintSpan(null, style, (int) getTextSize(), colors, colors);
-                internalEditInProgress = true;
-                text.insert(prefix.length(), hintText);
-                text.setSpan(hintSpan, prefix.length(), prefix.length() + getHint().length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                internalEditInProgress = false;
-                setSelection(prefix.length());
-            } else {
-                if (hint == null) {
-                    return; //hint already removed
-                }
-
-                //Remove the hint. There should only ever be one
-                int sStart = text.getSpanStart(hint);
-                int sEnd = text.getSpanEnd(hint);
-
-                internalEditInProgress = true;
-                text.removeSpan(hint);
-                text.replace(sStart, sEnd, "");
-                internalEditInProgress = false;
-
-                hintVisible = false;
-            }
         }
     }
 
@@ -1314,7 +1190,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
 
             clearSelections();
-            updateHint();
         }
 
         @Override
@@ -1418,7 +1293,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         setText(ss.prefix);
         prefix = ss.prefix;
         internalEditInProgress = false;
-        updateHint();
         allowCollapse = ss.allowCollapse;
         performBestGuess = ss.performBestGuess;
         preventFreeFormText = ss.preventFreeFormText;
@@ -1604,18 +1478,6 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
             }
 
             return super.deleteSurroundingText(beforeLength, afterLength);
-        }
-
-        @Override
-        public boolean setComposingRegion(int start, int end) {
-            //The hint is displayed inline as regular text, but we want to disable normal compose
-            //functionality on it, so if we attempt to set a composing region on the hint, set the
-            //composing region to have length of 0, which indicates there is no composing region
-            //Without this, on many software keyboards, the first word of the hint will be underlined
-            if (hintVisible) {
-                start = end = 0;
-            }
-            return super.setComposingRegion(start, end);
         }
 
         @Override

@@ -2,15 +2,13 @@ package com.tokenautocompleteexample;
 
 import android.content.Context;
 import android.graphics.Paint;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.rule.ActivityTestRule;
 import com.tokenautocomplete.ViewSpan;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +42,7 @@ public class ViewSpanTest {
 
     @Before
     public void setUp() {
-        context = InstrumentationRegistry.getTargetContext();
+        context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         layout = new TestLayout();
     }
 
@@ -52,7 +50,7 @@ public class ViewSpanTest {
     public void correctLineHeightWithBaseline() {
         TextView textView = new TextView(context);
         textView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                                                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                ViewGroup.LayoutParams.WRAP_CONTENT));
         textView.setText("A person's name");
 
         ViewSpan span = new ViewSpan(textView, layout);

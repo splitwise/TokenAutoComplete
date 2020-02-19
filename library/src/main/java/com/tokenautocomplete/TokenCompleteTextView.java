@@ -8,10 +8,10 @@ import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
-import android.support.v7.widget.AppCompatAutoCompleteTextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -295,7 +295,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * <p>You can get a color integer either using
-     * {@link android.support.v4.content.ContextCompat#getColor(android.content.Context, int)}
+     * {@link androidx.core.content.ContextCompat#getColor(android.content.Context, int)}
      * or with {@link android.graphics.Color#parseColor(String)}.</p>
      * <p>{@link android.graphics.Color#parseColor(String)}
      * accepts these formats (copied from android.graphics.Color):

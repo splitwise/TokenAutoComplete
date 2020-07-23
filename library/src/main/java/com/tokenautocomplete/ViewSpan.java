@@ -30,7 +30,7 @@ public class ViewSpan extends ReplacementSpan {
     }
 
     private void prepView() {
-        if (layout.getMaxViewSpanWidth() != cachedMaxWidth) {
+        if (layout.getMaxViewSpanWidth() != cachedMaxWidth || view.isLayoutRequested()) {
             cachedMaxWidth = layout.getMaxViewSpanWidth();
 
             int spec = View.MeasureSpec.AT_MOST;

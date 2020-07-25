@@ -1164,7 +1164,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         invalidate();
     }
 
-    protected class TokenImageSpan extends ViewSpan implements NoCopySpan {
+    public class TokenImageSpan extends ViewSpan implements NoCopySpan {
         private T token;
 
         @SuppressWarnings("WeakerAccess")

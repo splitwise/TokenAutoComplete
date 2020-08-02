@@ -21,3 +21,16 @@ jobs:
       run: ./gradlew build
     - name: Run unit tests
       run: ./gradlew test
+    - name: Build integration test target
+      run: ./gradlew assembleAndroidTest
+    - name: Configure Google Cloud credentials
+      env:
+        GOOGLE_CLOUD_SERVICE_KEY: ${{secrets.GOOGLE_CLOUD_SERVICE_KEY}}
+        GOOGLE_PROJECT_ID: ${{secrets.GOOGLE_PROJECT_ID}}
+      run: |
+        echo $GOOGLE_CLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+        gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+        gcloud --quiet config set project $GOOGLE_PROJECT_ID
+    - name: Run Instrumented Tests with Firebase Test Lab
+      run: gcloud firebase test android run --type instrumentation --app example/build/outputs/apk/debug/example-debug.apk --test example/build/outputs/apk/androidTest/debug/example-debug-androidTest.apk --device model=Nexus6,version=23,locale=en,orientation=portrait --timeout 30m
+

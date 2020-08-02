@@ -1614,15 +1614,10 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                     text.length() == lastCompletionText.length() + 1 &&
                     text.toString().startsWith(lastCompletionText)) {
                 text = text.subSequence(text.length() - 1, text.length());
+                lastCompletionText = null;
             }
 
             return super.setComposingText(text, newCursorPosition);
         }
-    }
-
-    @Override
-    protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
-        super.onTextChanged(text, start, lengthBefore, lengthAfter);
-        lastCompletionText = null;
     }
 }

@@ -1,11 +1,9 @@
 package com.tokenautocomplete;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
@@ -553,25 +551,20 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         return (int)maxTextWidth();
     }
 
-    boolean inInvalidate = false;
+    public void redrawTokens() {
+        // There's no straight-forward way to convince the widget to redraw the text and spans. We trigger a redraw by
+        // making an invisible change (either adding or removing a dummy span).
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    private void api16Invalidate() {
-        if (initialized && !inInvalidate) {
-            inInvalidate = true;
-            setShadowLayer(getShadowRadius(), getShadowDx(), getShadowDy(), getShadowColor());
-            inInvalidate = false;
+        Editable text = getText();
+        if (text == null) return;
+
+        int textLength = text.length();
+        DummySpan[] dummySpans = text.getSpans(0, textLength, DummySpan.class);
+        if (dummySpans.length > 0) {
+            text.removeSpan(DummySpan.INSTANCE);
+        } else {
+            text.setSpan(DummySpan.INSTANCE, 0, textLength, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
         }
-    }
-
-    @Override
-    public void invalidate() {
-        //Need to force the TextView private mEditor variable to reset as well on API 16 and up
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            api16Invalidate();
-        }
-
-        super.invalidate();
     }
 
     @Override
@@ -1158,10 +1151,16 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         if (text == null) return;
 
         TokenImageSpan[] tokens = text.getSpans(0, text.length(), TokenImageSpan.class);
+        boolean shouldRedrawTokens = false;
         for (TokenImageSpan token : tokens) {
-            token.view.setSelected(false);
+            if (token.view.isSelected()) {
+                token.view.setSelected(false);
+                shouldRedrawTokens = true;
+            }
         }
-        invalidate();
+        if (shouldRedrawTokens) {
+            redrawTokens();
+        }
     }
 
     protected class TokenImageSpan extends ViewSpan implements NoCopySpan {
@@ -1190,12 +1189,13 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                     if (!view.isSelected()) {
                         clearSelections();
                         view.setSelected(true);
+                        redrawTokens();
                         break;
                     }
 
                     if (tokenClickStyle == TokenClickStyle.SelectDeselect || !isTokenRemovable(token)) {
                         view.setSelected(false);
-                        invalidate();
+                        redrawTokens();
                         break;
                     }
                     //If the view is already selected, we want to delete it

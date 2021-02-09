@@ -2,7 +2,7 @@ package com.tokenautocomplete;
 
 import java.util.Locale;
 
-class Range {
+public class Range {
     public final int start;
     public final int end;
 

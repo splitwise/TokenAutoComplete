@@ -6,23 +6,7 @@ import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.os.Parcel;
 import android.os.Parcelable;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
-import android.text.Editable;
-import android.text.InputFilter;
-import android.text.InputType;
-import android.text.Layout;
-import android.text.NoCopySpan;
-import android.text.Selection;
-import android.text.SpanWatcher;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.TextUtils;
-import android.text.TextWatcher;
+import android.text.*;
 import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -30,15 +14,14 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.ExtractedText;
-import android.view.inputmethod.ExtractedTextRequest;
-import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputConnectionWrapper;
-import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.*;
 import android.widget.Filter;
 import android.widget.ListView;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
+import androidx.appcompat.widget.AppCompatAutoCompleteTextView;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -84,9 +67,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     private TokenSpanWatcher spanWatcher;
     private TokenTextWatcher textWatcher;
     private CountSpan countSpan;
-    private @Nullable SpannableStringBuilder hiddenContent;
+    private @Nullable
+    SpannableStringBuilder hiddenContent;
     private TokenClickStyle tokenClickStyle = TokenClickStyle.None;
     private CharSequence prefix = "";
+    private boolean prefixEnabled = true;
     private boolean hintVisible = false;
     private Layout lastLayout = null;
     private boolean initialized = false;
@@ -250,6 +235,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * Override if you want to prevent a token from being added. Defaults to false.
+     *
      * @param token the token to check
      * @return true if the token should not be added, false if it's ok to add it.
      */
@@ -259,11 +245,22 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * Override if you want to prevent a token from being removed. Defaults to true.
+     *
      * @param token the token to check
      * @return false if the token should not be removed, true if it's ok to remove it.
      */
     public boolean isTokenRemovable(@SuppressWarnings("unused") T token) {
         return true;
+    }
+
+    /**
+     * There is an issue if onRestoreState of the objects is not desired, the setting of the prefix
+     * overrides any existing in `text`. This option allows callers to disable that feature.
+     *
+     * @param enabled whether to enable the prefix
+     */
+    public void setPrefixEnabled(boolean enabled) {
+        this.prefixEnabled = enabled;
     }
 
     /**
@@ -304,7 +301,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * 'olive', 'purple', 'silver', 'teal'.</p>
      *
      * @param prefix prefix
-     * @param color A single color value in the form 0xAARRGGBB.
+     * @param color  A single color value in the form 0xAARRGGBB.
      */
     @SuppressWarnings("SameParameterValue")
     public void setPrefix(CharSequence prefix, int color) {
@@ -319,12 +316,12 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      * @return List of tokens
      */
     public List<T> getObjects() {
-        ArrayList<T>objects = new ArrayList<>();
+        ArrayList<T> objects = new ArrayList<>();
         Editable text = getText();
         if (hiddenContent != null) {
             text = hiddenContent;
         }
-        for (TokenImageSpan span: text.getSpans(0, text.length(), TokenImageSpan.class)) {
+        for (TokenImageSpan span : text.getSpans(0, text.length(), TokenImageSpan.class)) {
             objects.add(span.getToken());
         }
         return objects;
@@ -403,8 +400,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * Correctly build accessibility string for token contents
-     *
+     * <p>
      * This seems to be a hidden API, but there doesn't seem to be another reasonable way
+     *
      * @return custom string for accessibility
      */
     @SuppressWarnings("unused")
@@ -466,7 +464,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     @SuppressWarnings("unused")
     public void clearCompletionText() {
         //Respect currentCompletionText in case hint is visible or if other checks are added.
-        if (currentCompletionText().length() == 0){
+        if (currentCompletionText().length() == 0) {
             return;
         }
 
@@ -513,7 +511,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
         List<Range> tokenRanges = tokenizer.findTokenRanges(editable, candidateStringStart, candidateStringEnd);
 
-        for (Range range: tokenRanges) {
+        for (Range range : tokenRanges) {
             if (range.start <= cursorEndPosition && cursorEndPosition <= range.end) {
                 return range;
             }
@@ -524,6 +522,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * Override if you need custom logic to provide a sting representation of a token
+     *
      * @param token the token to convert
      * @return the string representation of the token. Defaults to {@link Object#toString()}
      */
@@ -548,7 +547,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     @Override
     public int getMaxViewSpanWidth() {
-        return (int)maxTextWidth();
+        return (int) maxTextWidth();
     }
 
     public void redrawTokens() {
@@ -944,7 +943,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
     public void removeObjectSync(T object) {
         //To make sure all the appropriate callbacks happen, we just want to piggyback on the
         //existing code that handles deleting spans when the text changes
-        ArrayList<Editable>texts = new ArrayList<>();
+        ArrayList<Editable> texts = new ArrayList<>();
         //If there is hidden content, it's important that we update it first
         if (hiddenContent != null) {
             texts.add(hiddenContent);
@@ -954,7 +953,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         }
 
         // If the object is currently visible, remove it
-        for (Editable text: texts) {
+        for (Editable text : texts) {
             TokenImageSpan[] spans = text.getSpans(0, text.length(), TokenImageSpan.class);
             for (TokenImageSpan span : spans) {
                 if (span.getToken().equals(object)) {
@@ -989,7 +988,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         post(new Runnable() {
             @Override
             public void run() {
-                for (T object: getObjects()) {
+                for (T object : getObjects()) {
                     removeObjectSync(object);
                 }
             }
@@ -1001,7 +1000,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
      */
     private void updateCountSpan() {
         //No count span with free form text
-        if (!preventFreeFormText) { return; }
+        if (!preventFreeFormText) {
+            return;
+        }
 
         Editable text = getText();
 
@@ -1074,7 +1075,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
                 }
             }
             editable.insert(offset, ssb);
-            editable.insert(offset  + ssb.length(), " ");
+            editable.insert(offset + ssb.length(), " ");
             editable.setSpan(tokenSpan, offset, offset + ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             internalEditInProgress = false;
         } else {
@@ -1216,7 +1217,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     public interface TokenListener<T> {
         void onTokenAdded(T token);
+
         void onTokenRemoved(T token);
+
         void onTokenIgnored(T token);
     }
 
@@ -1336,7 +1339,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         // always return the Type of this class. Because this class is parameterized, the cast is safe
         ParameterizedType superclass = (ParameterizedType) viewClass.getGenericSuperclass();
         Type type = superclass.getActualTypeArguments()[0];
-        return (Class)type;
+        return (Class) type;
     }
 
     @Override
@@ -1352,7 +1355,9 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         savingState = false;
         SavedState state = new SavedState(superState);
 
-        state.prefix = prefix;
+        if (prefixEnabled) {
+            state.prefix = prefix;
+        }
         state.allowCollapse = allowCollapse;
         state.performBestGuess = performBestGuess;
         state.preventFreeFormText = preventFreeFormText;
@@ -1392,8 +1397,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         super.onRestoreInstanceState(ss.getSuperState());
 
         internalEditInProgress = true;
-        setText(ss.prefix);
-        prefix = ss.prefix;
+        prefixEnabled = ss.prefixEnabled;
+        if (prefixEnabled) {
+            setText(ss.prefix);
+            prefix = ss.prefix;
+        }
         internalEditInProgress = false;
         updateHint();
         allowCollapse = ss.allowCollapse;
@@ -1407,11 +1415,11 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         if (SavedState.SERIALIZABLE_PLACEHOLDER.equals(ss.parcelableClassName)) {
             objects = convertSerializableObjectsToTypedObjects(ss.baseObjects);
         } else {
-            objects = (List<T>)ss.baseObjects;
+            objects = (List<T>) ss.baseObjects;
         }
 
         //TODO: change this to keep object spans in the correct locations based on ranges.
-        for (T obj: objects) {
+        for (T obj : objects) {
             addObjectSync(obj);
         }
 
@@ -1434,6 +1442,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         static final String SERIALIZABLE_PLACEHOLDER = "Serializable";
 
         CharSequence prefix;
+        boolean prefixEnabled;
         boolean allowCollapse;
         boolean performBestGuess;
         boolean preventFreeFormText;
@@ -1447,13 +1456,14 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         SavedState(Parcel in) {
             super(in);
             prefix = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);
+            prefixEnabled = in.readInt() != 0;
             allowCollapse = in.readInt() != 0;
             performBestGuess = in.readInt() != 0;
             preventFreeFormText = in.readInt() != 0;
             tokenClickStyle = TokenClickStyle.values()[in.readInt()];
             parcelableClassName = in.readString();
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
-                baseObjects = (ArrayList)in.readSerializable();
+                baseObjects = (ArrayList) in.readSerializable();
             } else {
                 try {
                     ClassLoader loader = Class.forName(parcelableClassName).getClassLoader();
@@ -1481,13 +1491,14 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         public void writeToParcel(@NonNull Parcel out, int flags) {
             super.writeToParcel(out, flags);
             TextUtils.writeToParcel(prefix, out, 0);
+            out.writeInt(prefixEnabled ? 1 : 0);
             out.writeInt(allowCollapse ? 1 : 0);
             out.writeInt(performBestGuess ? 1 : 0);
             out.writeInt(preventFreeFormText ? 1 : 0);
             out.writeInt(tokenClickStyle.ordinal());
             if (SERIALIZABLE_PLACEHOLDER.equals(parcelableClassName)) {
                 out.writeString(SERIALIZABLE_PLACEHOLDER);
-                out.writeSerializable((Serializable)baseObjects);
+                out.writeSerializable((Serializable) baseObjects);
             } else {
                 out.writeString(parcelableClassName);
                 out.writeList(baseObjects);
@@ -1519,6 +1530,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
 
     /**
      * Checks if selection can be deleted. This method is called from TokenInputConnection .
+     *
      * @param beforeLength the number of characters before the current selection end to check
      * @return true if there are no non-deletable pieces of the section
      */

@@ -1355,6 +1355,7 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         savingState = false;
         SavedState state = new SavedState(superState);
 
+        state.prefixEnabled = prefixEnabled;
         if (prefixEnabled) {
             state.prefix = prefix;
         }
@@ -1399,8 +1400,8 @@ public abstract class TokenCompleteTextView<T> extends AppCompatAutoCompleteText
         internalEditInProgress = true;
         prefixEnabled = ss.prefixEnabled;
         if (prefixEnabled) {
-            setText(ss.prefix);
             prefix = ss.prefix;
+            setText(prefix);
         }
         internalEditInProgress = false;
         updateHint();

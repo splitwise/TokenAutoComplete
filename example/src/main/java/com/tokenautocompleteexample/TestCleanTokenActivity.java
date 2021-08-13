@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.tokenautocomplete.FilteredArrayAdapter;
@@ -30,6 +31,11 @@ public class TestCleanTokenActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        TabHost tabs = (TabHost) findViewById(R.id.tabHost);
+        tabs.setup();
+        tabs.addTab(tabs.newTabSpec("Contacts").setContent(R.id.contactsFrame).setIndicator("Contacts"));
+        tabs.addTab(tabs.newTabSpec("Composer").setContent(R.id.hashtagsFrame).setIndicator("Composer"));
 
         people = new Person[]{
                 new Person("Marshall Weir", "marshall@example.com"),

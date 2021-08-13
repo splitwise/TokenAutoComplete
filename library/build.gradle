@@ -3,6 +3,8 @@ plugins {
     id("maven-publish")
     id("signing")
 }
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-parcelize'
 
 android {
     compileSdkVersion Integer.parseInt(project.ANDROID_BUILD_SDK_VERSION)
@@ -39,6 +41,8 @@ dependencies {
 
     implementation("androidx.annotation:annotation:$ANDROIDX_VERSION")
     implementation("androidx.appcompat:appcompat:$ANDROIDX_VERSION")
+    implementation "androidx.core:core-ktx:+"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
 task libraryJavadocs(type: Javadoc) {
@@ -119,4 +123,7 @@ publishing {
 
 signing {
     sign publishing.publications.maven
+}
+repositories {
+    mavenCentral()
 }

@@ -1,11 +1,8 @@
-package com.tokenautocomplete;
+package com.tokenautocomplete
 
-import android.os.Parcelable;
-import androidx.annotation.NonNull;
+import android.os.Parcelable
 
-import java.util.List;
-
-public interface Tokenizer extends Parcelable {
+interface Tokenizer : Parcelable {
     /**
      * Find all ranges that can be tokenized. This system should detect possible tokens
      * both with and without having had wrapTokenValue called on the token string representation
@@ -15,8 +12,7 @@ public interface Tokenizer extends Parcelable {
      * @param end where the tokenizer should stop looking for tokens
      * @return all ranges of characters that are valid tokens
      */
-    @NonNull
-    List<Range> findTokenRanges(CharSequence charSequence, int start, int end);
+    fun findTokenRanges(charSequence: CharSequence, start: Int, end: Int): List<Range>
 
     /**
      * Return a complete string representation of the token. Often used to add commas after email
@@ -27,13 +23,12 @@ public interface Tokenizer extends Parcelable {
      * @param unwrappedTokenValue the value to wrap
      * @return the token value with any expected delimiter characters
      */
-    @NonNull
-    CharSequence wrapTokenValue(CharSequence unwrappedTokenValue);
+    fun wrapTokenValue(unwrappedTokenValue: CharSequence): CharSequence
 
     /**
      * Return true if there is a character in the charSequence that should trigger token detection
      * @param charSequence source text to look at
      * @return true if charSequence contains a value that should end a token
      */
-    boolean containsTokenTerminator(CharSequence charSequence);
+    fun containsTokenTerminator(charSequence: CharSequence): Boolean
 }

@@ -3,6 +3,7 @@ package com.tokenautocomplete
 import android.content.Context
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.text.Editable
@@ -78,6 +79,15 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     private var allowCollapse = true
     private var internalEditInProgress = false
     private var tokenLimit = -1
+
+    /**
+     * Android M/API 30 introduced a change to the SpannableStringBuilder that triggers additional
+     * text change callbacks when we do our token replacement. It's supposed to report if it's a
+     * recursive call to the callbacks to let the recipient handle nested calls differently, but
+     * for some reason, in our case the first and second callbacks both report a depth of 1 and only
+     * on the third callback do we get a depth of 2, so we need to track this ourselves.
+     */
+    private var ignoreNextTextCommit = false
 
     @Transient
     private var lastCompletionText: String? = null
@@ -814,6 +824,9 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         }
         if (editable != null) {
             internalEditInProgress = true
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                ignoreNextTextCommit = true
+            }
             if (tokenSpan == null) {
                 editable.replace(candidateRange.start, candidateRange.end, "")
             } else if (shouldIgnoreToken(tokenSpan.token)) {
@@ -1172,6 +1185,12 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     private inner class TokenTextWatcher : TextWatcher {
         var spansToRemove = ArrayList<TokenImageSpan>()
         override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+            if (internalEditInProgress || ignoreNextTextCommit) return
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (s is SpannableStringBuilder && s.textWatcherDepth > 1) return
+            }
+
             // count > 0 means something will be deleted
             if (count > 0 && text != null) {
                 val text = text
@@ -1192,13 +1211,16 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         }
 
         override fun afterTextChanged(text: Editable) {
-            val spansCopy = ArrayList(spansToRemove)
-            spansToRemove.clear()
-            for (token in spansCopy) {
-                //Only remove it if it's still present
-                if (text.getSpanStart(token) != -1 && text.getSpanEnd(token) != -1) {
-                    removeSpan(text, token)
+            if (!internalEditInProgress) {
+                val spansCopy = ArrayList(spansToRemove)
+                spansToRemove.clear()
+                for (token in spansCopy) {
+                    //Only remove it if it's still present
+                    if (text.getSpanStart(token) != -1 && text.getSpanEnd(token) != -1) {
+                        removeSpan(text, token)
+                    }
                 }
+                ignoreNextTextCommit = false
             }
             clearSelections()
             updateHint()

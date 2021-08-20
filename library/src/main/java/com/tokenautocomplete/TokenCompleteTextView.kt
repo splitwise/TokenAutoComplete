@@ -1261,7 +1261,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         //Figure out what class of objects we have
         var viewClass: Class<*> = javaClass
         while (viewClass.superclass != TokenCompleteTextView::class.java) {
-            viewClass = viewClass.superclass
+            viewClass = viewClass.superclass as Class<*>
         }
 
         // This operation is safe. Because viewClass is a direct sub-class, getGenericSuperclass() will

@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        api-version: [23, 29, 30]
+        api-version: [23, 24, 25, 26, 27, 28, 29, 30]
 
     steps:
     - uses: actions/checkout@v2

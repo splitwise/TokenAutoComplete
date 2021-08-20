@@ -69,7 +69,6 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     private var hiddenContent: SpannableStringBuilder? = null
     private var tokenClickStyle: TokenClickStyle? = TokenClickStyle.None
     private var prefix: CharSequence? = ""
-    private var hintVisible = false
     private var lastLayout: Layout? = null
     private var initialized = false
     private var performBestGuess = true
@@ -91,6 +90,11 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
 
     @Transient
     private var lastCompletionText: String? = null
+
+    private val hintVisible: Boolean
+        get() {
+            return text.getSpans(0, text.length, HintSpan::class.java).isNotEmpty()
+        }
 
     /**
      * Add the TextChangedListeners
@@ -1062,7 +1066,6 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                 testLength += text.getSpanEnd(hint) - text.getSpanStart(hint)
             }
             if (text.length == testLength) {
-                hintVisible = true
                 if (hint != null) {
                     return  //hint already visible
                 }
@@ -1076,13 +1079,9 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                 val colors = hintTextColors
                 val hintSpan = HintSpan(null, style, textSize.toInt(), colors, colors)
                 internalEditInProgress = true
-                text.insert(prefix!!.length, hintText)
-                text.setSpan(
-                    hintSpan,
-                    prefix!!.length,
-                    prefix!!.length + getHint().length,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+                val spannedHint = SpannableString(hintText)
+                spannedHint.setSpan(hintSpan, 0, spannedHint.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                text.insert(prefix!!.length, spannedHint)
                 internalEditInProgress = false
                 setSelection(prefix!!.length)
             } else {
@@ -1097,7 +1096,6 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                 text.removeSpan(hint)
                 text.replace(sStart, sEnd, "")
                 internalEditInProgress = false
-                hintVisible = false
             }
         }
     }

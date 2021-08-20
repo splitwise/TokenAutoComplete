@@ -77,6 +77,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     private var shouldFocusNext = false
     private var allowCollapse = true
     private var internalEditInProgress = false
+    private var inBatchEditAPI26to29Workaround = false
     private var tokenLimit = -1
 
     /**
@@ -1220,8 +1221,12 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                 }
                 ignoreNextTextCommit = false
             }
+
             clearSelections()
-            updateHint()
+
+            if (!inBatchEditAPI26to29Workaround) {
+                updateHint()
+            }
         }
 
         override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
@@ -1477,6 +1482,30 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         target: InputConnection?,
         mutable: Boolean
     ) : InputConnectionWrapper(target, mutable) {
+
+        private val needsWorkaround: Boolean
+            get() {
+                return Build.VERSION_CODES.O <= Build.VERSION.SDK_INT  &&
+                        Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q
+
+            }
+
+        override fun beginBatchEdit(): Boolean {
+            if (needsWorkaround) {
+                inBatchEditAPI26to29Workaround = true
+            }
+            return super.beginBatchEdit()
+        }
+
+        override fun endBatchEdit(): Boolean {
+            val result = super.endBatchEdit()
+            if (needsWorkaround) {
+                inBatchEditAPI26to29Workaround = false
+                post { updateHint() }
+            }
+            return result
+        }
+
         // This will fire if the soft keyboard delete key is pressed.
         // The onKeyPressed method does not always do this.
         override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean {

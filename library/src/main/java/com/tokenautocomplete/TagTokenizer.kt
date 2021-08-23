@@ -1,9 +1,11 @@
 package com.tokenautocomplete
 
+import android.annotation.SuppressLint
 import kotlinx.parcelize.Parcelize
 import java.util.*
 
 @Parcelize
+@SuppressLint("ParcelCreator")
 open class TagTokenizer constructor(private val tagPrefixes: List<Char>) : Tokenizer {
 
     internal constructor() : this(listOf<Char>('@', '#'))

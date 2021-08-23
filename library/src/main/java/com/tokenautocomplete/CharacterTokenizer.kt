@@ -1,5 +1,7 @@
 package com.tokenautocomplete
 
+import android.annotation.SuppressLint
+import android.os.Parcelable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils
@@ -13,8 +15,8 @@ import java.util.*
  * @author mgod
  */
 @Parcelize
+@SuppressLint("ParcelCreator")
 open class CharacterTokenizer(private val splitChar: List<Char>, private val tokenTerminator: String) : Tokenizer {
-
     override fun containsTokenTerminator(charSequence: CharSequence): Boolean {
         for (element in charSequence) {
             if (splitChar.contains(element)) {

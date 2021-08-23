@@ -35,6 +35,6 @@ jobs:
         gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
         gcloud --quiet config set project $GOOGLE_PROJECT_ID
     - name: Run Instrumented Tests with Firebase Test Lab
-      run: gcloud firebase test android run --type instrumentation --app example/build/outputs/apk/debug/example-debug.apk --test example/build/outputs/apk/androidTest/debug/example-debug-androidTest.apk --device model=NexusLowRes,version=API_VERSION,locale=en,orientation=portrait --timeout 30m
+      run: gcloud firebase test android run --type instrumentation --app example/build/outputs/apk/debug/example-debug.apk --test example/build/outputs/apk/androidTest/debug/example-debug-androidTest.apk --device model=NexusLowRes,version=$API_VERSION,locale=en,orientation=portrait --timeout 30m
       env:
         API_VERSION: ${{ matrix.api-version }}

@@ -1096,6 +1096,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                 internalEditInProgress = true
                 text.removeSpan(hint)
                 text.replace(sStart, sEnd, "")
+                setSelection(sStart)
                 internalEditInProgress = false
             }
         }

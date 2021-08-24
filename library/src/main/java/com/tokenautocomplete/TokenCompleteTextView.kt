@@ -100,7 +100,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     /**
      * Add the TextChangedListeners
      */
-    protected fun addListeners() {
+    protected open fun addListeners() {
         val text = text
         if (text != null) {
             text.setSpan(spanWatcher, 0, text.length, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
@@ -111,7 +111,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     /**
      * Remove the TextChangedListeners
      */
-    protected fun removeListeners() {
+    protected open fun removeListeners() {
         val text = text
         if (text != null) {
             val spanWatchers = text.getSpans(0, text.length, TokenSpanWatcher::class.java)
@@ -247,7 +247,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
      * @param token the token to check
      * @return false if the token should not be removed, true if it's ok to remove it.
      */
-    fun isTokenRemovable(@Suppress("unused_parameter") token: T): Boolean {
+    open fun isTokenRemovable(@Suppress("unused_parameter") token: T): Boolean {
         return true
     }
 
@@ -395,7 +395,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
      * @return custom string for accessibility
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    val textForAccessibility: CharSequence
+    open val textForAccessibility: CharSequence
         get() {
             if (objects.isEmpty()) {
                 return text
@@ -515,11 +515,11 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
      * @return the string representation of the token. Defaults to [Object.toString]
      */
     @Suppress("MemberVisibilityCanBePrivate")
-    protected fun tokenToString(token: T): CharSequence {
+    protected open fun tokenToString(token: T): CharSequence {
         return token.toString()
     }
 
-    protected fun currentCompletionText(): String {
+    protected open fun currentCompletionText(): String {
         if (hintVisible) return "" //Can't have any text if the hint is visible
         val editable = text
         val currentRange = currentCandidateTokenRange
@@ -529,7 +529,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    protected fun maxTextWidth(): Float {
+    protected open fun maxTextWidth(): Float {
         return (width - paddingLeft - paddingRight).toFloat()
     }
 
@@ -725,7 +725,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
      *
      * @param hasFocus boolean indicating whether we have the focus or not.
      */
-    fun performCollapse(hasFocus: Boolean) {
+    open fun performCollapse(hasFocus: Boolean) {
         internalEditInProgress = true
         if (!hasFocus) {
             // Display +x thingy/ellipse if appropriate
@@ -807,7 +807,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    protected fun buildSpanForObject(obj: T?): TokenImageSpan? {
+    protected open fun buildSpanForObject(obj: T?): TokenImageSpan? {
         if (obj == null) {
             return null
         }
@@ -1229,7 +1229,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    protected fun getSerializableObjects(): List<Serializable> {
+    protected open fun getSerializableObjects(): List<Serializable> {
         val serializables = ArrayList<Serializable>()
         for (obj in objects) {
             if (obj is Serializable) {
@@ -1249,7 +1249,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
-    protected fun convertSerializableObjectsToTypedObjects(s: List<*>?): List<T>? {
+    protected open fun convertSerializableObjectsToTypedObjects(s: List<*>?): List<T>? {
         @Suppress("unchecked_cast")
         return s as List<T>?
     }

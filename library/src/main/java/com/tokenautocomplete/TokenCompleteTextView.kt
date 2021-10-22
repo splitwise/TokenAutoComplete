@@ -605,7 +605,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         imm.hideSoftInputFromWindow(windowToken, 0)
     }
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
         val handled = super.onKeyUp(keyCode, event)
         if (shouldFocusNext) {
             shouldFocusNext = false
@@ -614,10 +614,10 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         return handled
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         var handled = false
         when (keyCode) {
-            KeyEvent.KEYCODE_TAB, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> if (event.hasNoModifiers()) {
+            KeyEvent.KEYCODE_TAB, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_DPAD_CENTER -> if (event?.hasNoModifiers() == true) {
                 shouldFocusNext = true
                 handled = true
             }
@@ -642,7 +642,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         return false
     }
 
-    override fun onEditorAction(view: TextView, action: Int, keyEvent: KeyEvent): Boolean {
+    override fun onEditorAction(view: TextView, action: Int, keyEvent: KeyEvent?): Boolean {
         if (action == EditorInfo.IME_ACTION_DONE) {
             handleDone()
             return true

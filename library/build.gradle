@@ -16,8 +16,6 @@ android {
     defaultConfig {
         minSdkVersion Integer.parseInt(project.ANDROID_BUILD_MIN_SDK_VERSION)
         targetSdkVersion Integer.parseInt(project.ANDROID_BUILD_TARGET_SDK_VERSION)
-        versionCode Integer.parseInt(project.VERSION_CODE)
-        versionName project.VERSION_NAME
     }
 
     buildTypes {
@@ -39,9 +37,9 @@ android {
 dependencies {
     testImplementation("junit:junit:4.13")
 
-    implementation("androidx.annotation:annotation:$ANDROIDX_VERSION")
-    implementation("androidx.appcompat:appcompat:$ANDROIDX_VERSION")
-    implementation "androidx.core:core-ktx:+"
+    implementation "androidx.annotation:annotation:1.2.0"
+    implementation "androidx.appcompat:appcompat:1.3.1"
+    implementation "androidx.core:core-ktx:1.6.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 

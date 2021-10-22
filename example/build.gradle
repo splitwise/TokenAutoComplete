@@ -6,8 +6,8 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-intents:3.2.0"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.2.0"
 
-    implementation "androidx.annotation:annotation:$ANDROIDX_VERSION"
-    implementation "androidx.appcompat:appcompat:$ANDROIDX_VERSION"
+    implementation "androidx.annotation:annotation:1.2.0"
+    implementation "androidx.appcompat:appcompat:1.3.1"
     implementation project(":library")
 }
 

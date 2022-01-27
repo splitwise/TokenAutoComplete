@@ -1142,6 +1142,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
                     //Make sure the selection is not in the middle of the span
                     setSelection(text.getSpanEnd(this))
                 }
+                else -> {}
             }
         }
     }

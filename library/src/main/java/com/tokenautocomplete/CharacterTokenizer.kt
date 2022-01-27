@@ -1,7 +1,6 @@
 package com.tokenautocomplete
 
 import android.annotation.SuppressLint
-import android.os.Parcelable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.TextUtils

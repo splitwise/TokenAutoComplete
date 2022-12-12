@@ -694,7 +694,7 @@ abstract class TokenCompleteTextView<T: Any> : AppCompatAutoCompleteTextView, On
         }
         if (selectionStart < prefix?.length ?: 0 || selectionEnd < prefix?.length ?: 0) {
             //Don't let users select the prefix
-            setSelection(prefix?.length ?: 0)
+            setSelection((prefix?.length ?: 0).coerceAtMost(text?.length ?: 0))
         } else {
             val text = text
             if (text != null) {

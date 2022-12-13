@@ -12,14 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        api-version: [23, 24, 25, 26, 27, 28, 29, 30]
+        device-split: [
+          {model: "NexusLowRes", version: 23},
+          {model: "NexusLowRes", version: 24},
+          {model: "NexusLowRes", version: 25},
+          {model: "NexusLowRes", version: 26},
+          {model: "NexusLowRes", version: 27},
+          {model: "NexusLowRes", version: 28},
+          {model: "NexusLowRes", version: 29},
+          {model: "NexusLowRes", version: 30},
+
+          {model: "oriole", version: 31},
+          {model: "oriole", version: 32},
+          {model: "oriole", version: 33}
+        ]
 
     steps:
     - uses: actions/checkout@v2
-    - name: set up JDK 1.8
+    - name: set up JDK 11
       uses: actions/setup-java@v1
       with:
-        java-version: 1.8
+        java-version: 11
     - name: Build with Gradle
       run: ./gradlew build
     - name: Run unit tests
@@ -35,6 +48,7 @@ jobs:
         gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
         gcloud --quiet config set project $GOOGLE_PROJECT_ID
     - name: Run Instrumented Tests with Firebase Test Lab
-      run: gcloud firebase test android run --type instrumentation --app example/build/outputs/apk/debug/example-debug.apk --test example/build/outputs/apk/androidTest/debug/example-debug-androidTest.apk --device model=NexusLowRes,version=$API_VERSION,locale=en,orientation=portrait --timeout 30m
+      run: gcloud firebase test android run --type instrumentation --app example/build/outputs/apk/debug/example-debug.apk --test example/build/outputs/apk/androidTest/debug/example-debug-androidTest.apk --device model=$DEVICE,version=$API_VERSION,locale=en,orientation=portrait --timeout 30m
       env:
-        API_VERSION: ${{ matrix.api-version }}
+        API_VERSION: ${{ matrix.device-split.version }}
+        DEVICE: ${{ matrix.device-split.model }}

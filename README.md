@@ -61,13 +61,13 @@ Setup
 =====
 
 ### Gradle
-```
+```groovy
 dependencies {
-    compile "com.splitwise:tokenautocomplete:3.0.1@aar"
+    implementation "com.splitwise:tokenautocomplete:3.0.1@aar"
 }
 ```
 ### Maven
-```
+```xml
 <dependency>
   <groupId>com.splitwise</groupId>
   <artifactId>tokenautocomplete</artifactId>

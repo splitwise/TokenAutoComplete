@@ -1,3 +1,8 @@
+[![Android CI](https://github.com/splitwise/TokenAutoComplete/actions/workflows/android.yml/badge.svg)](https://github.com/splitwise/TokenAutoComplete/actions/workflows/android.yml)
+[![License](https://img.shields.io/github/license/splitwise/TokenAutoComplete.svg)](LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/com.splitwise/tokenautocomplete.svg)](https://search.maven.org/artifact/com.splitwise/tokenautocomplete)
+
+
 ### Version 3.0
 
 The `3.0.1` version is now available! This should resolve a number of text handling issues and lay the groundwork for better support of mixed text and token input. If you're still on `2.*`, you can find the docs for `2.0.8` [here](https://github.com/splitwise/TokenAutoComplete/tree/2.0.8).
